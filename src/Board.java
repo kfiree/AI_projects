@@ -31,4 +31,52 @@ public class Board {
         this.rowLen = rowLen;
         this.colLen = colLen;
     }
+
+    public void setColLen(int colLen) {
+        this.colLen = colLen;
+    }
+
+    public void setRowLen(int rowLen) {
+        this.rowLen = rowLen;
+    }
+
+    public void setOpen(boolean open) {
+        this.open = open;
+    }
+
+    public void setTime(boolean time) {
+        this.time = time;
+    }
+
+    public void setCurr(stateNode curr) {
+        this.curr = curr;
+    }
+
+    public void setGoal(stateNode goal) {
+        this.goal = goal;
+    }
+
+    public int getColLen() {
+        return colLen;
+    }
+
+    public int getRowLen() {
+        return rowLen;
+    }
+
+    public boolean isOpen() {
+        return open;
+    }
+
+    public boolean isTime() {
+        return time;
+    }
+
+    public stateNode getCurr() {
+        return curr;
+    }
+
+    public stateNode getGoal() {
+        return goal;
+    }
 }

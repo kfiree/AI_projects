@@ -1,9 +1,11 @@
 import java.util.ArrayList;
 
 public class stateNode {
-    ArrayList<ArrayList<Integer>> tiles = new ArrayList<>();
+    int[][] tiles;
+    stateNode prev;
 
-    public stateNode(ArrayList<ArrayList<Integer>> tiles) {
+    public stateNode(int[][] tiles, stateNode prev) {
         this.tiles = tiles;
+        this.prev = prev;
     }
 }

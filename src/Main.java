@@ -50,22 +50,24 @@ public class Main {
 
     private static void runAlgo(String algo, Board board){
 //        BFS, DFID, A*, IDA*, DFBnB
+        searchAlgorithm puzzleSolver = new searchAlgorithm(board);
+
         switch(algo)
         {
             case "BFS":
-                System.out.println("BFS");
+                puzzleSolver.BFS();
                 break;
             case "DFID":
-                System.out.println("DFID");
+                puzzleSolver.DFID();
                 break;
             case "A*":
-                System.out.println("A*");
+                puzzleSolver.AStar();
                 break;
             case "IDA*":
-                System.out.println("IDA*");
+                puzzleSolver.IDAStar();
                 break;
             case "DFBnB":
-                System.out.println("DFBnB");
+                puzzleSolver.DFBnB();
                 break;
             default:
                 throw new IllegalArgumentException("Wrong algorithm instruction format - \""+algo+"\".");
@@ -73,17 +75,17 @@ public class Main {
     }
 
     private static stateNode readNode(Scanner file, int rowLen, int colLen) {
-        ArrayList<ArrayList<Integer>> tiles = new ArrayList<>();
+        int[][] tiles = new int[rowLen][colLen];
 
         for (int i = 0; i < rowLen; i++) {
-            String[] numbers = file.nextLine().split(","); //
-            tiles.add(new ArrayList<>());
+            String[] numbers = file.nextLine().split(",");
+
             for (int j = 0; j < colLen; j++) {
-                tiles.get(i).add(readTile(numbers[j]));
+                tiles[i][j] = readTile(numbers[j]);
             }
         }
 
-        return new stateNode(tiles);
+        return new stateNode(tiles, null);
     }
 
     private static boolean readTime(String Instruction) {
