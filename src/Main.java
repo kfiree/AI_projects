@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -8,6 +9,8 @@ public class Main {
     public static void main(String[] args){
         readFile();
     }
+
+   static stateNode goal, start;
 
     private static void readFile() {
         String algoType;
@@ -34,9 +37,9 @@ public class Main {
         colLen = Integer.parseInt(dimensions[1]);
 
         //       ==== READ START AND GOAL NODE ====
-        stateNode start = readNode(file, rowLen, colLen);
+        start = readNode(file, rowLen, colLen);
         file.nextLine();
-        stateNode goal  = readNode(file, rowLen, colLen);
+        goal  = readNode(file, rowLen, colLen);
 
         file.close();
 
@@ -55,7 +58,7 @@ public class Main {
         switch(algo)
         {
             case "BFS":
-                puzzleSolver.BFS();
+                puzzleSolver.BFS(start, goal);
                 break;
             case "DFID":
                 puzzleSolver.DFID();
@@ -76,16 +79,21 @@ public class Main {
 
     private static stateNode readNode(Scanner file, int rowLen, int colLen) {
         int[][] tiles = new int[rowLen][colLen];
-
+        Point p1=null, p2=null;
         for (int i = 0; i < rowLen; i++) {
             String[] numbers = file.nextLine().split(",");
 
             for (int j = 0; j < colLen; j++) {
+                if(p1 ==null)
+                    p1 = new Point(i,j);
+                else
+                    p2 = new Point(i,j);
+
                 tiles[i][j] = readTile(numbers[j]);
             }
         }
 
-        return new stateNode(tiles, null);
+        return new stateNode(tiles, p1, p2);
     }
 
     private static boolean readTime(String Instruction) {
