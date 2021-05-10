@@ -155,8 +155,7 @@ public class searchAlgorithm {
     }
 
     public void IDAStar(){
-        System.out.println("IDA*");
-
+        System.out.println("running IDA* algorithm...");
     /*
      IDA*(Node start, Vector Goals)
          1. L  make_stack and H  make_hash_table
@@ -188,7 +187,91 @@ public class searchAlgorithm {
          4. Return false
      */
 
+        stateNode start = this.board.getCurr();
+        stateNode goal = this.board.getGoal();
 
+//        1. L  make_stack and H  make_hash_table
+        Stack<stateNode> L = new Stack<>();
+        Hashtable<String, stateNode> H = new Hashtable<>();
+
+//        2. t  h(start)
+        start.Heuristic(manhattan(start));
+        int minF, threshold = start.Heuristic();
+        stateNode curr = start;
+
+//        3. While t ≠ ∞
+        while(threshold != Integer.MAX_VALUE) {
+            // 1. minF  ∞
+            minF = Integer.MAX_VALUE;
+            // 2. L.insert(start) and H.insert(start)
+            H.put(curr.key(), curr);
+            L.add(curr);
+            // 3. While L is not empty
+            while (!L.isEmpty()){
+                // 1. n  L.remove_front()
+                stateNode pop = L.pop();
+                H.remove(pop.key());
+
+                // 2. If n is marked as “out”
+                if(pop.isOut()){
+                    //1. H.remove(n)
+                    H.remove(pop.key());
+                //2. Else
+                }else {
+                    //2. mark n as “out” and L.insert(n)
+                    pop.setOut(true);
+                    H.put(pop.key(), pop);
+                    //3. For each allowed operator on n
+                    LinkedHashMap<String, stateNode> children = pop.getChildren(this);
+                    for (Map.Entry<String, stateNode> entry : children.entrySet()) {
+                        stateNode childState = entry.getValue();
+                        // 1. If f(g) > t
+                        int f = childState.Heuristic() + childState.getCost();
+                        if (f > threshold) {
+                            //1. minF  min(minF, f(g))
+                            minF = Math.min(minF, f);
+
+                            //2. continue with the next operator
+                            continue;
+                        } else {
+                            // 2. If H contains g’=g and g’ marked “out”
+                            stateNode g2 = H.get(childState.key());
+                            if (g2 != null) {
+                                if (!g2.isOut()) {
+                                    // 1. continue with the next operator
+                                    continue;
+                                // 3. If H contains g’=g and g’ not marked “out”
+                                } else {
+                                    int f2 = g2.Heuristic() + g2.getCost();
+
+                                    // 1. If f(g’)>f(g)
+                                    if (f2 > f) {
+                                        // 1. remove g’ from L and H
+                                        H.remove(g2.key());
+                                        // 2. Else
+                                    } else {
+                                        // 1. continue with the next operator
+                                        continue;
+                                    }
+                                }
+                                // 4. If goal(g) then return path(g) //all the “out” nodes in L
+                                if (childState.equals(goal)) {
+                                    this.HandlePath(childState);
+                                    return;
+                                }
+                                // 5. L.insert(g) and H.insert(g)
+                                L.add(childState);
+                                H.put(childState.key(), childState);
+                            }
+                        }
+
+                    }
+                }
+            // 4. t  minF}
+            threshold = minF;
+            }
+        // 4. Return false
+        }
     }
 
     public void DFBnB(){

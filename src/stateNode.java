@@ -12,6 +12,16 @@ public class stateNode implements Comparable<stateNode> {
     private final int colLen, rowLen;
     private int cost=0, heuristic;
     private final ArrayList<Point> empties;
+
+    public boolean isOut() {
+        return isOut;
+    }
+
+    public void setOut(boolean out) {
+        isOut = out;
+    }
+
+    private boolean isOut;
     private final LinkedHashMap<String, stateNode> children = new LinkedHashMap<>();
     Hashtable<String, stateNode> Frontier, Explored;
 
