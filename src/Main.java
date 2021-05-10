@@ -5,16 +5,19 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
-
+    static Board board;
     public static void main(String[] args){
-        readFile();
+    readFile();
+
     }
 
-   static stateNode goal, start;
+    static ArrayList<Point> emptyTiles = new ArrayList<>();
+    static stateNode goal, start;
+
 
     private static void readFile() {
         String algoType;
-        int rowLen, colLen;;
+        int rowLen, colLen;
         boolean timeInstruction, openInstruction;
         Scanner file = null;
         System.out.println(new File("."));
@@ -29,6 +32,7 @@ public class Main {
         }
 
         //      ==== GET PUZZLE INSTRUCTION ====
+        assert file != null;
         algoType = file.nextLine(); // types := BFS, DFID, A*, IDA*, DFBnB
         timeInstruction =  readTime(file.nextLine()); // print file
         openInstruction = readOpen(file.nextLine()); // print openList
@@ -37,14 +41,16 @@ public class Main {
         colLen = Integer.parseInt(dimensions[1]);
 
         //       ==== READ START AND GOAL NODE ====
-        start = readNode(file, rowLen, colLen);
+        start = readState(file, rowLen, colLen);
+
         file.nextLine();
-        goal  = readNode(file, rowLen, colLen);
+        goal  = readState(file, rowLen, colLen);
 
         file.close();
 
         //      ==== SET BOARD ====
-        Board board = new Board(timeInstruction, openInstruction, rowLen, colLen, start, goal);
+        board = new Board(timeInstruction, openInstruction, rowLen, colLen, start, goal);
+
 
         //      ==== RUN ALGORITHM ====
         runAlgo(algoType, board);
@@ -55,45 +61,32 @@ public class Main {
 //        BFS, DFID, A*, IDA*, DFBnB
         searchAlgorithm puzzleSolver = new searchAlgorithm(board);
 
-        switch(algo)
-        {
-            case "BFS":
-                puzzleSolver.BFS(start, goal);
-                break;
-            case "DFID":
-                puzzleSolver.DFID();
-                break;
-            case "A*":
-                puzzleSolver.AStar();
-                break;
-            case "IDA*":
-                puzzleSolver.IDAStar();
-                break;
-            case "DFBnB":
-                puzzleSolver.DFBnB();
-                break;
-            default:
-                throw new IllegalArgumentException("Wrong algorithm instruction format - \""+algo+"\".");
+        switch (algo) {
+            case "BFS" -> puzzleSolver.BFS();
+            case "DFID" -> puzzleSolver.DFID();
+            case "A*" -> puzzleSolver.AStar();
+            case "IDA*" -> puzzleSolver.IDAStar();
+            case "DFBnB" -> puzzleSolver.DFBnB();
+            default -> throw new IllegalArgumentException("Wrong algorithm instruction format - \"" + algo + "\".");
         }
     }
 
-    private static stateNode readNode(Scanner file, int rowLen, int colLen) {
+    private static stateNode readState(Scanner file, int rowLen, int colLen) {
+        emptyTiles.clear();
         int[][] tiles = new int[rowLen][colLen];
-        Point p1=null, p2=null;
+
         for (int i = 0; i < rowLen; i++) {
             String[] numbers = file.nextLine().split(",");
 
             for (int j = 0; j < colLen; j++) {
-                if(p1 ==null)
-                    p1 = new Point(i,j);
-                else
-                    p2 = new Point(i,j);
-
-                tiles[i][j] = readTile(numbers[j]);
+                int tile = readTile(numbers[j]);
+                if(tile == -1)
+                    emptyTiles.add(new Point(i,j));
+                tiles[i][j] = tile;
             }
         }
 
-        return new stateNode(tiles, p1, p2);
+        return new stateNode(tiles, emptyTiles);
     }
 
     private static boolean readTime(String Instruction) {
@@ -119,7 +112,7 @@ public class Main {
             return -1;
 
         try{
-            return Integer.valueOf(tileStr);
+            return Integer.parseInt(tileStr);
         } catch (Exception  e) { throw new IllegalArgumentException("Wrong tile format - \""+ tileStr +"\"."); }
     }
 

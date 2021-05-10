@@ -1,9 +1,13 @@
+import java.awt.*;
+import java.util.HashMap;
+
 public class Board {
 
     stateNode goal;
     stateNode curr;
     boolean time, open;
     int rowLen, colLen;
+    HashMap<Integer, Point> goalMap = new HashMap<>();
 
     /**
          ___________________________________
@@ -32,14 +36,6 @@ public class Board {
         this.colLen = colLen;
     }
 
-    public void setColLen(int colLen) {
-        this.colLen = colLen;
-    }
-
-    public void setRowLen(int rowLen) {
-        this.rowLen = rowLen;
-    }
-
     public void setOpen(boolean open) {
         this.open = open;
     }
@@ -56,11 +52,15 @@ public class Board {
         this.goal = goal;
     }
 
-    public int getColLen() {
+    public Point tileLocation(int tileNum){
+        return goalMap.get(tileNum);
+    }
+
+    public int width() {
         return colLen;
     }
 
-    public int getRowLen() {
+    public int height() {
         return rowLen;
     }
 
