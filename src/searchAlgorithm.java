@@ -50,12 +50,12 @@ public class searchAlgorithm {
 
             // 2. C  n
             Explored.put(n.key(), n);
-            LinkedHashMap<String, stateNode> children = n.getChildren(this);
+            ArrayList<stateNode> children = n.getChildren();
 
             // 3. For each allowed operator on n
-            for(Map.Entry<String, stateNode> entry :  children.entrySet()){
+            for(stateNode operator :  children){
                 // 1. g  operator(n)
-                stateNode operator = entry.getValue();
+
 //                System.out.println("----------- child "+ i++ +" ------------");
 //                operator.printState();
                 // 2. If g not in C and not in L
@@ -126,10 +126,8 @@ public class searchAlgorithm {
             Explored.put(currState.key(), currState);
 
             // 4. For each allowed operator on n
-            LinkedHashMap<String, stateNode> children = currState.getChildren(this);
-            for(Map.Entry<String, stateNode> entry :  children.entrySet()){
+            for(stateNode operator :  currState.getChildren()){
                 // 1. x  operator(n)
-                stateNode operator = entry.getValue();
                 currState.Heuristic(manhattan(currState));
 
                 // 2. If x not in C and not in L
@@ -191,22 +189,21 @@ public class searchAlgorithm {
         stateNode start = this.board.getCurr();
         stateNode goal = this.board.getGoal();
 
-//        1. L  make_stack and H  make_hash_table
+        // 1. L  make_stack and H  make_hash_table
         Stack<stateNode> L = new Stack<>();
         Hashtable<String, stateNode> H = new Hashtable<>();
 
-//        2. t  h(start)
+        // 2. t  h(start)
         start.Heuristic(manhattan(start));
         int minF, threshold = start.Heuristic();
-        stateNode curr = start;
 
-//        3. While t ≠ ∞
+        // 3. While t ≠ ∞
         while(threshold != Integer.MAX_VALUE) {
             // 1. minF  ∞
             minF = Integer.MAX_VALUE;
             // 2. L.insert(start) and H.insert(start)
-            H.put(curr.key(), curr);
-            L.add(curr);
+            H.put(start.key(), start);
+            L.add(start);
             // 3. While L is not empty
             while (!L.isEmpty()){
                 // 1. n  L.remove_front()
@@ -223,20 +220,17 @@ public class searchAlgorithm {
                     pop.setOut(true);
                     H.put(pop.key(), pop);
                     //3. For each allowed operator on n
-                    LinkedHashMap<String, stateNode> children = pop.getChildren(this);
-                    for (Map.Entry<String, stateNode> entry : children.entrySet()) {
-                        stateNode childState = entry.getValue();
+                    for (stateNode operator : pop.getChildren()) {
                         // 1. If f(g) > t
-                        int f = childState.Heuristic() + childState.getCost();
+                        int f = operator.Heuristic() + operator.getCost();
                         if (f > threshold) {
                             //1. minF  min(minF, f(g))
                             minF = Math.min(minF, f);
 
                             //2. continue with the next operator
-                            continue;
                         } else {
                             // 2. If H contains g’=g and g’ marked “out”
-                            stateNode g2 = H.get(childState.key());
+                            stateNode g2 = H.get(operator.key());
                             if (g2 != null) {
                                 if (!g2.isOut()) {
                                     // 1. continue with the next operator
@@ -256,13 +250,13 @@ public class searchAlgorithm {
                                     }
                                 }
                                 // 4. If goal(g) then return path(g) //all the “out” nodes in L
-                                if (childState.equals(goal)) {
-                                    this.HandlePath(childState);
+                                if (operator.equals(goal)) {
+                                    this.HandlePath(operator);
                                     return;
                                 }
                                 // 5. L.insert(g) and H.insert(g)
-                                L.add(childState);
-                                H.put(childState.key(), childState);
+                                L.add(operator);
+                                H.put(operator.key(), operator);
                             }
                         }
 
@@ -314,43 +308,113 @@ DFBnB(Node start, Vector Goals)
         Stack<stateNode> L = new Stack<>();
         Hashtable<String, stateNode> H = new Hashtable<>();
 
+        L.add(start);
+        H.put(start.key(), start);
+
         // 2. result  null, t  ∞ // should be set to a strict upper bound in an infinite graph
         int t = Integer.MAX_VALUE;
         List<stateNode> result = null;
+
         // 3. While L is not empty
         while(!L.isEmpty()){
+            // 1. n  L.remove_front()
+            stateNode state = L.pop();
+
+            //2. If n is marked as “out”
+            if(state.isOut()) {
+                //1. H.remove(n)
+                H.remove(state.key());
+            //3. Else
+            }else{
+                //1. mark n as “out” and L.insert(n)
+                state.setOut(true);
+                L.push(state);
+
+                //2. N  apply all of the allowed operators on n
+                ArrayList<stateNode> children = state.getChildren();
+
+                // 3. sort the nodes in N according to their f values (increasing order)
+                for(stateNode child :  children){
+                    child.Heuristic(manhattan(child));
+                }
+                //Sort the list
+                Collections.sort(children);
+
+                // 4. For each node g from N according to the order of N
+                for(int i = 0; i <children.size(); i++) {
+                    stateNode child = children.get(i);
+
+                    // 1. If f(g) >= t
+                    int f = child.Heuristic() + child.getCost();
+                    if(f >= t){
+                        // 1. remove g and all the nodes after it from N
+                        children.subList(children.indexOf(child), children.size()).clear();
+
+                    // 2. Else If H contains g’=g and g’ is marked as “out”
+                    }else{
+                        stateNode g2 = H.get(child.key());
+                        if(g2!=null){
+                            if(g2.isOut()){
+                                // 1. remove g from N
+                                children.remove(g2);
+                            // 3. Else If H contains g’=g and g’ is not marked as “out”
+                            }else{
+                                // 1. If f(g’)<=f(g)  remove g from N
+                                int f2 = child.Heuristic() + child.getCost();
+                                if(f2<=f)
+                                    L.remove(child);
+                                else
+                                    L.remove(g2);
+                            }// 4. Else If goal(g) // if we reached here, f(g) < t
+                            if(child.equals(goal)){
+                                // 1. t  f(g)
+                                t = f;
+                                // 2. result  path(g) // all the “out” nodes in L
+                                List<stateNode> path = HandlePath(child);
+                                // 3. remove g and all the nodes after it from N
+//                                for
+                            }
+
+                        }
+                    }
+                }
+
+
+
+
+
+
+
+                //   5. insert N in a reverse order to L and H
+                // 4. Return result
+            }
 
         }
     }
 
-    private void HandlePath(stateNode pathEnd){
+    private List<stateNode> HandlePath(stateNode pathEnd){
         stateNode curr = pathEnd;
-        ArrayList<String> path = new ArrayList<>();
 
+        ArrayList<stateNode> path = new ArrayList<>();
         while(curr.getPrev() != null){
-            path.add(curr.getLastOperation());
-
-            curr.printState();
-            System.out.println("---"+curr.getLastOperation()+"---");
-            curr=curr.getPrev();
+            path.add(curr);
         }
 
-        curr.printState();
-        System.out.println("---"+curr.getLastOperation()+"---");
-
         Collections.reverse(path);
+        return path;
 
 
-//        for(int i=0; i<path.size();i++){
-//            System.out.println(path.get(i)+"-");
-//            nodesPath.get(i).printState();
-//        }
-//        for(String s: path){
-//            stateNode node = Explored.get(s);
-//            if(node!= null)
-//                node.printState();
-//            System.out.println(s+"-");
-//        }
+    }
+
+    private void printPath(List<stateNode> path){
+        System.out.println("--- START ---");
+        for(stateNode state: path){
+            System.out.println("---"+state.getLastOperation()+"---");
+            state.printState();
+        }
+        System.out.println("--- FINISHED ---");
+        stateNode target = path.get(path.size() - 1);
+        System.out.println("cost := " + target.getCost()+", depth:= " + target.getDepth());
     }
 
     private int manhattan(stateNode curr) {

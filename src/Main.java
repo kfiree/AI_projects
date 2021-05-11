@@ -11,7 +11,6 @@ public class Main {
 
     }
 
-    static ArrayList<Point> emptyTiles = new ArrayList<>();
     static stateNode goal, start;
 
 
@@ -72,7 +71,6 @@ public class Main {
     }
 
     private static stateNode readState(Scanner file, int rowLen, int colLen) {
-        emptyTiles.clear();
         int[][] tiles = new int[rowLen][colLen];
 
         for (int i = 0; i < rowLen; i++) {
@@ -80,13 +78,11 @@ public class Main {
 
             for (int j = 0; j < colLen; j++) {
                 int tile = readTile(numbers[j]);
-                if(tile == -1)
-                    emptyTiles.add(new Point(i,j));
                 tiles[i][j] = tile;
             }
         }
 
-        return new stateNode(tiles, emptyTiles);
+        return new stateNode(tiles);
     }
 
     private static boolean readTime(String Instruction) {
