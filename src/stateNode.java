@@ -271,6 +271,10 @@ public class stateNode implements Comparable<stateNode> {
         return heuristic;
     }
 
+    public int f(){
+        return heuristic + cost;
+    }
+
     public void Heuristic(int heuristic) {
         this.heuristic = heuristic;
     }
@@ -279,8 +283,8 @@ public class stateNode implements Comparable<stateNode> {
         return isOut;
     }
 
-    public void setOut(boolean out) {
-        isOut = out;
+    public void markOut() {
+        isOut = true;
     }
 
     private void setEmptyTiles(){
