@@ -4,6 +4,12 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+//enum ALGO  {BFS,
+//        DFID,
+//        AStar,
+//        IDAStar,
+//        DFBnB}
+
 public class Main {
     static Board board;
     public static void main(String[] args){
@@ -19,12 +25,12 @@ public class Main {
         int rowLen, colLen;
         boolean timeInstruction, openInstruction;
         Scanner file = null;
-        System.out.println(new File("."));
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+//        System.out.println(new File("."));
+//        System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
         //      ==== OPEN FILE ====
         try{
-            file = new Scanner(new File("./src/data/input2.txt"));
+            file = new Scanner(new File("./src/data/input1.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("file not found");
             e.printStackTrace();
@@ -52,12 +58,19 @@ public class Main {
 
 
         //      ==== RUN ALGORITHM ====
+
+//
+//        Scanner myObj = new Scanner(System.in);
+//        System.out.println(" Choose operation:\n 1) BFS \n 2) DFID \n 3) A*\n 4) IDA*\n 5)DFBnB");
+//        int index = myObj.nextInt();
+//        ALGO algo =  ALGO.values()[index];
+//        System.out.println(algo.name());
         runAlgo(algoType, board);
 
     }
 
     private static void runAlgo(String algo, Board board){
-//        BFS, DFID, A*, IDA*, DFBnB
+        // BFS, DFID, A*, IDA*, DFBnB
         searchAlgorithm puzzleSolver = new searchAlgorithm(board);
 
         switch (algo) {

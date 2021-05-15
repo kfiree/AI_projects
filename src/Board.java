@@ -28,14 +28,30 @@ public class Board {
                 9  10 11 _
      */
     public Board(boolean time, boolean open, int rowLen, int colLen, stateNode start, stateNode goal) {
-        this.goal= goal;
-        this.curr = start;
+        this.goal= start;
+        updateGoalMap(start);
+        this.curr = goal;
+
+//        this.goal= goal;
+//        updateGoalMap(goal);
+//        this.curr = start;
+
         this.time = time;
         this.open = open;
         this.rowLen = rowLen;
         this.colLen = colLen;
     }
 
+    public void updateGoalMap(stateNode goal){
+        int[][] tiles = goal.getTiles();
+        for (int row = 0; row < goal.rowLen(); row++) {
+            for (int col = 0; col < goal.colLen(); col++) {
+                int tileNum = goal.getTile(row, col);
+                if(tileNum!=-1)
+                    goalMap.put(tileNum, new Point(row,col));
+            }
+        }
+    }
     public void setOpen(boolean open) {
         this.open = open;
     }

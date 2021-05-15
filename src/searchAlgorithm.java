@@ -2,10 +2,36 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+enum Result{
+    GOAL(null),
+    FAIL(null),
+    CUTOFF(null);
+
+    private stateNode goal;
+
+    public stateNode getGoal(){
+        return this.goal;
+    }
+
+    public Result setGoal(stateNode goal){
+        this.goal = goal;
+        return this;
+    }
+
+    Result(stateNode resultGoal){
+        this.goal = resultGoal;
+    }
+
+}
+
 public class searchAlgorithm {
 
     Board board;
-    Hashtable<String, stateNode> FrontierTable= new Hashtable<>(), Explored = new Hashtable<>();
+//    Hashtable<String, stateNode> FrontierTable= new Hashtable<>(), Explored = new Hashtable<>();
+
+    Result result;
+
+    HashMap<Integer, Integer> duplicate = new HashMap<>();
 
     public searchAlgorithm(Board board) {
         this.board = board;
@@ -56,13 +82,10 @@ public class searchAlgorithm {
             for(stateNode operator :  children){
                 // 1. g  operator(n)
 
-//                System.out.println("----------- child "+ i++ +" ------------");
-//                operator.printState();
                 // 2. If g not in C and not in L
                 if(!Explored.containsKey(operator.key()) && !FrontierTable.containsKey(operator.key())){
                     // 1. If goal(g) return path(g)
                     if(operator.equals(goal)){
-                        System.out.println("found it. cost " + operator.getCost() + " path is....");
                         pathHandler(operator) ;
                         return;
                     }
@@ -101,48 +124,74 @@ public class searchAlgorithm {
         stateNode goal = this.board.getGoal();
 
         // 1. L  make_priority_queue(start) and make_hash_table
-        // 2. C  make_hash_table
-        Hashtable<String, stateNode> Explored = new Hashtable<>();
+        PriorityQueue<stateNode> L= new PriorityQueue<>();
+        Hashtable<String, stateNode> LH = new Hashtable<>();
 
-        PriorityQueue<stateNode> Frontier= new PriorityQueue<>();
-        Hashtable<String, stateNode> FrontierTable = new Hashtable<>();
-        Frontier.add(start);
-        FrontierTable.put(start.toString(), start);
+        L.add(start);
+        LH.put(start.key(), start);
+
+        // 2. C  make_hash_table
+        Hashtable<String, stateNode> C = new Hashtable<>();
+
 
         // 3. While L not empty loop
-        while(!Frontier.isEmpty()){
+        while(!L.isEmpty()){
 
             // 1. n  L.remove_front()
-            stateNode currState = Frontier.poll();
-            currState.Heuristic(manhattan(currState));
+            stateNode currState = L.poll();
+            LH.remove(currState.key());
+//            LH.remove(currState.key());
+            currState.Heuristic(setHeuristic(currState));
 
             // 2. If goal(n) return path(n)
             if(currState.equals(goal)){
                 pathHandler(currState);
                 return;
             }
+            int a[][] = {{1,3,4},
+                        {-1,-1,6},
+                        {2,5,7}};
+            boolean b= true;
+            for (int i = 0; i < currState.rowLen(); i++) {
+                if (!Arrays.equals(a[i], currState.getTiles()[i])) {
 
+                    b=false;
+                }
+
+            }
+            if(b)
+                System.out.println("");
+            if(currState.getLastOperation()!= null)
+                if(currState.getLastOperation().equals("3U") )
+                    System.out.println("");
+
+            if(currState.getId() == 31)
+                System.out.println("");
             // 3. C  n
-            Explored.put(currState.key(), currState);
+            C.put(currState.key(), currState);
 
             // 4. For each allowed operator on n
-            for(stateNode operator :  currState.getChildren()){
+            ArrayList<stateNode> children = currState.getChildren();
+            for(stateNode operator : children){
                 // 1. x  operator(n)
-                currState.Heuristic(manhattan(currState));
+                operator.Heuristic(setHeuristic(operator));
 
                 // 2. If x not in C and not in L
-                if(!Explored.containsKey(operator.key()) && !FrontierTable.containsKey(operator.key())){
+                if(!C.containsKey(operator.key()) && !LH.containsKey(operator.key())){
 
                     // 1. L.insert(x)
-                    Frontier.add(currState);
-                    FrontierTable.put(currState.key(), currState);
+                    L.add(operator);
+                    LH.put(operator.key(), operator);
 
-                    // 3. Else if x in L with higher path cost
-                }else if(FrontierTable.containsKey(currState.key())){
+                // 3. Else if x in L with higher path cost
+                }else if(LH.containsKey(operator.key())){
+                    stateNode x = LH.get(operator.key());
+
                     // 1. Replace the node in L with xL
-                    if( currState.isGreaterThan( FrontierTable.get(currState.key()) ) ){
-                        Frontier.remove(currState);
-                        Frontier.add(currState);
+                    if( x.isGreaterThan(operator) ){
+                        L.remove(x);
+                        L.add(operator);
+//                        LH.put(currState.key(), currState);
                     }
                 }
             }
@@ -150,7 +199,117 @@ public class searchAlgorithm {
     }
 
     public void DFID(){
-        System.out.println("DFID");
+        System.out.println("running DFID algorithm...");
+
+    /*
+        DFID(Node start, Vector Goals)
+            1. For depth=1 to ∞
+                1. H  make_hash_table
+                2. result  Limited_DFS(start,Goals,depth,H)
+                3. If result ≠ cutoff then return result
+     */
+
+        stateNode start = this.board.getCurr();
+        stateNode goal = this.board.getGoal();
+
+        // 1. For depth=1 to ∞
+        int depth = 1;
+        while(depth<Integer.MAX_VALUE){
+            depth++;
+
+            // 1. H  make_hash_table
+            Hashtable<String, stateNode> H = new Hashtable<>();
+
+            // 2. result  Limited_DFS(start,Goals,depth,H)
+            result = Limited_DFS(start, goal, depth, H);
+
+            // 3. If result ≠ cutoff then return result
+            if(result != Result.CUTOFF) {
+                if(result == Result.GOAL){
+                    pathHandler(result.getGoal());
+                }
+                return;
+            }
+        }
+    }
+
+    public Result Limited_DFS(stateNode curr, stateNode goal, int limit, Hashtable<String, stateNode> H){
+        /*
+        Limited_DFS(Node n, Vector Goals, int limit, hash H)
+            1. If goal(n) then return path(n) //use the back pointers or the recursion tail
+            2. Else if limit = 0 then return cutoff
+            3. Else
+                1. H.insert(n)
+                2. isCutoff  false
+                3. For each allowed operator on n
+                    1. g  operator(n)
+                    2. If H contains g
+                        1. continue with the next operator
+                    3. result  Limited_DFS(g,Goals,limit-1,H)
+                    4. If result = cutoff
+                        1. isCutoff  true
+                    5. Else if result ≠ fail
+                        1. return result
+
+                4. H.remove(n) //the memory for n should be also released
+                5. If isCutoff = true
+                    1. return cutoff
+                6. Else
+                    1. return fail
+
+         */
+
+        //1. If goal(n) then return path(n) //use the back pointers or the recursion tail
+        if(curr.equals(goal))
+            return Result.GOAL.setGoal(curr);
+
+        //2. Else if limit = 0 then return cutoff
+        else if(limit == 0)
+            return Result.CUTOFF;
+        //3. Else
+        else{
+            // 1. H.insert(n)
+            H.put(curr.key(), curr);
+
+            // 2. isCutoff  false
+            boolean isCutoff = false;
+
+            // 3. For each allowed operator on n
+            ArrayList<stateNode> children = curr.getChildren();
+            for(stateNode state: children){
+                // 1. g  operator(n)
+
+                // 2. If H contains g
+                if(H.containsKey(state.key())) {
+                    // 1. continue with the next operator
+                    continue;
+                }
+
+                // 3. result  Limited_DFS(g,Goals,limit-1,H)
+                result = Limited_DFS(state, goal, limit-1, H);
+
+                // 4. If result = cutoff
+                if(result == Result.CUTOFF) {
+                    // 1. isCutoff  true
+                    isCutoff = true;
+                // 5. Else if result ≠ fail
+                }else if(result != Result.FAIL) {
+                    // 1. return result
+                    return result;
+                }
+            }
+
+            // 4. H.remove(n) //the memory for n should be also released
+            H.remove(curr);
+
+            /*
+             5. If isCutoff = true
+                 1. return cutoff
+             6. Else
+                 1. return fail
+            */
+            return isCutoff? Result.CUTOFF: Result.FAIL;
+        }
     }
 
     public void IDAStar(){
@@ -194,79 +353,89 @@ public class searchAlgorithm {
         Hashtable<String, stateNode> H = new Hashtable<>();
 
         // 2. t  h(start)
-        start.Heuristic(manhattan(start));
+        start.Heuristic(setHeuristic(start));
         int minF, threshold = start.Heuristic();
 
         // 3. While t ≠ ∞
         while(threshold != Integer.MAX_VALUE) {
             // 1. minF  ∞
             minF = Integer.MAX_VALUE;
+
             // 2. L.insert(start) and H.insert(start)
             H.put(start.key(), start);
-            L.add(start);
+            L.push(start);
+
             // 3. While L is not empty
             while (!L.isEmpty()){
+
                 // 1. n  L.remove_front()
-                stateNode pop = L.pop();
-                H.remove(pop.key());
+                stateNode n = L.pop();
+//                H.remove(pop.key()); //TODO ?
 
                 // 2. If n is marked as “out”
-                if(pop.isOut()){
+                if(n.isOut()){
                     //1. H.remove(n)
-                    H.remove(pop.key());
+                    H.remove(n.key());
                 //2. Else
                 }else {
                     //2. mark n as “out” and L.insert(n)
-                    pop.markOut();
-                    H.put(pop.key(), pop);
+                    n.markOut(true);
+                    L.push(n);
+
                     //3. For each allowed operator on n
-                    for (stateNode operator : pop.getChildren()) {
+                    ArrayList<stateNode> children = n.getChildren();
+                    for (stateNode operator : children) {
+                        operator.Heuristic(setHeuristic(operator));
                         // 1. If f(g) > t
-                        int f = operator.Heuristic() + operator.getCost();
-                        if (f > threshold) {
+                        if (operator.f() > threshold) {
                             //1. minF  min(minF, f(g))
-                            minF = Math.min(minF, f);
-
+                            minF = Math.min(minF, operator.f());
+                            continue;
                             //2. continue with the next operator
-                        } else {
-                            // 2. If H contains g’=g and g’ marked “out”
-                            stateNode g2 = H.get(operator.key());
-                            if (g2 != null) {
-                                if (!g2.isOut()) {
-                                    // 1. continue with the next operator
-                                    continue;
-                                // 3. If H contains g’=g and g’ not marked “out”
-                                } else {
-                                    int f2 = g2.Heuristic() + g2.getCost();
-
-                                    // 1. If f(g’)>f(g)
-                                    if (f2 > f) {
-                                        // 1. remove g’ from L and H
-                                        H.remove(g2.key());
-                                        // 2. Else
-                                    } else {
-                                        // 1. continue with the next operator
-                                        continue;
-                                    }
-                                }
-                                // 4. If goal(g) then return path(g) //all the “out” nodes in L
-                                if (operator.equals(goal)) {
-                                    this.pathHandler(operator);
-                                    return;
-                                }
-                                // 5. L.insert(g) and H.insert(g)
-                                L.add(operator);
-                                H.put(operator.key(), operator);
-                            }
                         }
 
+                        stateNode g2 = H.get(operator.key());
+//                        if (g2 != null) {
+
+                        // 2. If H contains g’=g and g’ marked “out”
+                        if (g2 != null && g2.isOut()) {
+                            // 1. continue with the next operator
+                            continue;
+                        }
+
+                        // 3. If H contains g’=g and g’ not marked “out”
+                        if(g2 != null && !g2.isOut()){
+                            g2.Heuristic(setHeuristic(g2));
+
+                            // 1. If f(g’)>f(g)
+                            if (g2.f() > operator.f()) {
+                                // 1. remove g’ from L and H
+                                H.remove(g2.key());
+                                L.remove(g2);
+
+                            // 2. Else
+                            } else {
+                                // 1. continue with the next operator
+                                continue;
+                            }
+                        }
+                        // 4. If goal(g) then return path(g) //all the “out” nodes in L
+                        if (operator.equals(goal)) {
+                            pathHandler(operator);
+                            return;
+                        }
+                        // 5. L.insert(g) and H.insert(g)
+                        L.push(operator);
+                        H.put(operator.key(), operator);
                     }
                 }
+            }
+            start.markOut(false);
             // 4. t  minF}
             threshold = minF;
-            }
-        // 4. Return false
         }
+        // 4. Return false
+        return;
     }
 
     public List<stateNode> DFBnB(){
@@ -307,7 +476,7 @@ DFBnB(Node start, Vector Goals)
 
         // 1. L  make_stack(start) and H  make_hash_table(start)
         Stack<stateNode> L = new Stack<>();
-        L.add(start);
+        L.push(start);
 
         Hashtable<String, stateNode> H = new Hashtable<>();
         H.put(start.key(), start);
@@ -328,16 +497,18 @@ DFBnB(Node start, Vector Goals)
             //3. Else
             }else{
                 //1. mark n as “out” and L.insert(n)
-                state.markOut();
+                state.markOut(true);
                 L.push(state);
 
+                if(state.getId() == 14){
+                    duplicate.put(0,0);
+                }
                 //2. N  apply all of the allowed operators on n
                 ArrayList<stateNode> children = state.getChildren();
 
                 // 3. sort the nodes in N according to their f values (increasing order)
                 for(stateNode child :  children)
-                    child.Heuristic(manhattan(child));
-
+                    child.Heuristic(setHeuristic(child));
                 Collections.sort(children);
 
                 // 4. For each node g from N according to the order of N
@@ -347,44 +518,49 @@ DFBnB(Node start, Vector Goals)
                     // 1. If f(g) >= t
                     if(child.f() >= t){
                         // 1. remove g and all the nodes after it from N
-                        children.subList(children.indexOf(child), children.size()).clear();
+                        itr.remove();
+                        while(itr.hasNext()){
+                            itr.next();
+                            itr.remove();
+                        }
 
                     // 2. Else If H contains g’=g and g’ is marked as “out”
-                    }else{
+                    }else if (H.containsKey(child.key()) && H.get(child.key()).isOut()){
+                        // 1. remove g from N
+                        itr.remove();
+                    // 3. Else If H contains g’=g and g’ is not marked as “out”
+                    }else if (H.containsKey(child.key()) && !H.get(child.key()).isOut()){
                         stateNode g2 = H.get(child.key());
-                        if(g2!=null){
-                            if(g2.isOut()){
-                                // 1. remove g from N
-                                children.remove(g2);
-                            // 3. Else If H contains g’=g and g’ is not marked as “out”
-                            }else{
-                                // 1. If f(g’)<=f(g)  remove g from N
-                                if(g2.f()<=child.f()) {
-                                    L.remove(child);
-                                }else {
-                                    L.remove(g2);
-                                    H.remove(g2.key());
-                                }
-                            }
-                            // 4. Else If goal(g) // if we reached here, f(g) < t
-                            if(child.equals(goal)){
-                                // 1. t  f(g)
-                                t = child.f();
 
-                                // 2. result  path(g) // all the “out” nodes in L
-                                result = pathHandler(child);
+                        // 1. If f(g’)<=f(g)  remove g from N
+                        if(g2.f()<=child.f()) {
+                            itr.remove();
+                        }else {
+                            // 1. remove g’ from L and from H
+                            L.remove(g2);
+                            H.remove(g2.key());
+                        }
+                    }
+                    // 4. Else If goal(g) // if we reached here, f(g) < t
+                    else if(child.equals(goal)){
+                        // 1. t  f(g)
+                        t = child.f();
 
-                                // 3. remove g and all the nodes after it from N
-                                children.subList(children.indexOf(child), children.size()).clear();
-                            }
+                        // 2. result  path(g) // all the “out” nodes in L
+                        result = pathHandler(child);
 
+                        // 3. remove g and all the nodes after it from N
+                        while(itr.hasNext()){
+                            itr.next();
+                            itr.remove();
                         }
                     }
                 }
+
                 //   5. insert N in a reverse order to L and H
                 for (int i = children.size() - 1; i >= 0; i--) {
                     stateNode child = children.get(i);
-                    L.add(child);
+                    L.push(child);
                     H.put(child.key(), child);
                 }
 
@@ -402,23 +578,29 @@ DFBnB(Node start, Vector Goals)
 
         while(curr.getPrev() != null){
             path.add(curr);
+            curr = curr.getPrev();
         }
 
         Collections.reverse(path);
 
-//        printPath(path);
+        printPath(path);
         return path;
     }
 
     private void printPath(List<stateNode> path){
-        System.out.println("--- START ---");
+
         for(stateNode state: path){
-            System.out.println("---"+state.getLastOperation()+"---");
-            state.printState();
+            System.out.print(" " + state.getLastOperation()+" ");
+//            state.printState();
         }
-        System.out.println("--- FINISHED ---");
+
         stateNode target = path.get(path.size() - 1);
-        System.out.println("cost := " + target.getCost()+", depth:= " + target.getDepth());
+        System.out.println("\ncost := " + target.getCost()+", depth:= " + target.getDepth() + ", nodes created := " + target.stateNodeNumber());
+    }
+
+    private int setHeuristic(stateNode curr){
+//        return manhattan(curr)*Operator.onePrice();
+        return (manhattan(curr)+linearConflict(curr)*2)*Operator.onePrice();
     }
 
     private int manhattan(stateNode curr) {
@@ -428,20 +610,54 @@ DFBnB(Node start, Vector Goals)
         for (int row = 0; row < board.height(); row++) {
             for (int col = 0; col < board.width(); col++) {
                 tileNum = tiles[row][col];
-                Point targetLocation = board.tileLocation(tileNum);
-
-                cost += Math.abs(row - targetLocation.x) + Math.abs(col - targetLocation.y);
+                if(tileNum!=-1){
+                    Point targetLocation = board.tileLocation(tileNum);
+                    cost += (Math.abs(row - targetLocation.x) + Math.abs(col - targetLocation.y));
+                }
             }
         }
         return cost;
     }
 
-    public Hashtable<String, stateNode> getFrontier() {
-        return FrontierTable;
-    }
+    private int linearConflict(stateNode curr){
+        int conflicts = 0, tileNum, tileNum_t;
+        int[][] tiles = curr.getTiles();
+        for (int row = 0; row < board.height(); row++) {
+            for (int col = 0; col < board.width(); col++) {
+                tileNum = tiles[row][col];
+                Point targetLocation = board.tileLocation(tileNum);
+                if(tileNum==-1) {
+                    continue;
+                }
 
-    public Hashtable<String, stateNode> getExplored() {
-        return Explored;
+                for(int row_t=0; row_t< board.height(); row_t++) {
+                    tileNum_t = tiles[row_t][col];
+                    if(tileNum_t==-1) {
+                        continue;
+                    }
+                    Point targetLocation_t = board.tileLocation(tileNum);
+
+                    boolean inRightCol = col == targetLocation_t.y;
+                    if(inRightCol &&  targetLocation.x == targetLocation_t.x && row_t > row && targetLocation.y > targetLocation_t.y){
+                        conflicts++;
+                    }
+                }
+
+                for(int col_t=0; col_t< board.height(); col_t++) {
+                    tileNum_t = tiles[row][col_t];
+                    if(tileNum_t==-1) {
+                        continue;
+                    }
+                    Point targetLocation_t = board.tileLocation(tileNum);
+
+                    boolean inRightRow = row == targetLocation_t.x;
+                    if(inRightRow &&  targetLocation.y == targetLocation_t.y && col_t > col && targetLocation.x > targetLocation_t.x){
+                        conflicts++;
+                    }
+                }
+            }
+        }
+        return conflicts;
     }
 
 }

@@ -4,92 +4,144 @@ import java.awt.*;
 import java.util.*;
 
 public class stateNode implements Comparable<stateNode> {
+    //  === NODE'S VARIABLE ===
     static int ID_Generator = 0;
-    private final int id, _leafDepth;
-    private final int[][] tiles;
-    private Operator _operator;
-    private String lastOperation;
-    private final stateNode prev;
-    private int cost=0, heuristic;
-    private ArrayList<Point> empties = new ArrayList<>();
-    private boolean isOut;
+    private final int _id, _leafDepth;
+    private final int[][] _tiles;
+    private ArrayList<Point> _empties = new ArrayList<>();
+    private  static int nodeCounter;
+    private boolean twoEmpty;
 
-    // Constructor
+    // === ALGORITHM'S VARIABLES ===
+    private Operator _operator;
+    private String _operationStr;
+    private final stateNode _prev;
+    private int _cost, _heuristic;
+    private boolean _out;
+
+
+    /**
+         _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\/\/\/\ CONSTRUCTORS /\/\/\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         ------------------------------
+     */
+
+    /**
+     * default constructor
+     * @param tiles
+     */
     public stateNode(int[][] tiles) {
         this._leafDepth = 0;
-        this.id = ++ID_Generator;
-        this.tiles = tiles;
-        this.prev = null;
+        this._id = ++ID_Generator;
+        this._tiles = tiles;
+        this._prev = null;
         setEmptyTiles();
+
+        checkForErrors();
+//        printState();
     }
 
-    // Copy Constructor
+    /**
+     * copy constructor for two tiles operations
+     * @param prev
+     * @param operator
+     */
     public stateNode(stateNode prev, Operator operator){
+        if(ID_Generator == 36)
+            System.out.println("");
         // set simple variables
-        this.id = ++ID_Generator; //id
+        nodeCounter++;
+        this._id = ++ID_Generator; //id
         this._leafDepth = prev.getDepth()+1; // leaf depth
-        this.prev = prev;
+        this._prev = prev;
+        this.twoEmpty = prev.isTwoEmpty();
 
         //deep copy prev's data
-        this.tiles = prev.copyTiles();
-        this.empties = prev.getEmpties();
+        this._tiles = prev.copyTiles();
+        this._empties = prev.copyEmpties();
 
         setOperation(operator);
-        swapOne(empties.get(0), operator);
-        swapOne(empties.get(1), operator);
+        Point empty1 = _empties.get(0);
+        Point empty2 = _empties.get(1);
+        swapOne(empty1);
+        swapOne(empty2);
 
-        this.cost = prev.getCost() + operator.price();
+        this._cost = prev.getCost() + operator.price();
+        checkForErrors();
+//        printState();
     }
 
+    /**
+     * copy constructor for one tiles operations
+     * @param prev
+     * @param operator
+     * @param empty
+     */
     public stateNode(stateNode prev, Operator operator, Point empty){
+        nodeCounter++;
+
         // set simple variables
-        this.id = ++ID_Generator; //id
+        this._id = ++ID_Generator; //id
         this._leafDepth = prev.getDepth()+1; // leaf depth
-        this.prev = prev;
-        this.cost = prev.getCost() + operator.price();
+        this._prev = prev;
+        this._cost = prev.getCost() + operator.price();
+        this.twoEmpty = prev.isTwoEmpty();
 
         //deep copy prev's data
-        this.tiles = prev.copyTiles();
-        this.empties = prev.getEmpties();
+        this._tiles = prev.copyTiles();
+        this._empties = prev.copyEmpties();
 
-        setOperation(operator);
-        swapOne(empty, operator);
+
+        setOperation(empty, operator);
+        swapOne(empty);
+
+        checkForErrors();
+//        printState();
     }
 
-    private void doOperation(){
 
-    }
+    /**
+         _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\  ALGORITHM'S FUNCTIONS /\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         ------------------------------
+     */
 
+    /**
+     * get all node's legal child leaf
+     * @return arraylist of nodes
+     */
     public ArrayList<stateNode> getChildren() {
 
         ArrayList<stateNode> children = new ArrayList<>();
 
-        if(empties.size() == 2) {
+        if(twoEmpty) {
             // sort empty tiles
             sortEmpty();
+        }
 
-            // move adjacent tiles
-            for (Operator operation : getAdjacentOperators())
-                children.add(new stateNode(this, operation));
+        // move adjacent tiles
+        ArrayList<Operator> adjacentOperators = getAdjacentOperators();
+        for (Operator operation : adjacentOperators)
+            children.add(new stateNode(this, operation));
 
-            //move single tile
-            Point empty1 = empties.get(0);
-            for (Operator operation : getSingleOperators(empty1))
-                children.add(new stateNode(this, operation, empty1));
-
-            Point empty2 = empties.get(1);
-            for (Operator operation : getSingleOperators(empty2))
-                children.add(new stateNode(this, operation, empty2));
-
-        }else{
-            for (Operator operation : getSingleOperators(empties.get(0)))
-                children.add(new stateNode(this, operation));
+        //move single tile
+        for(Point empty : _empties) {
+            for (Operator operation : getSingleOperators(empty))
+                children.add(new stateNode(this, operation, empty));
         }
 
         return children;
     }
 
-    public void swapOne(Point empty, Operator operator){
+    /**
+     * swap empty tile with a adjacent tile (determent by node's operator)
+     * @param empty tile to be swapped
+     */
+    public void swapOne(Point empty){
 
         // get prev's coordinates
         int prev_x = empty.x;
@@ -98,30 +150,47 @@ public class stateNode implements Comparable<stateNode> {
         int x = prev_x +  _operator.tile().x;
         int y = prev_y +  _operator.tile().y;
 
-        int temp = this.tiles[x][y];
-        this.tiles[prev_x][prev_y] = temp;
-        this.tiles[x][y] = -1;
+        int temp = this._tiles[x][y];
+        this._tiles[prev_x][prev_y] = temp;
+        this._tiles[x][y] = -1;
 
+        updateEmpty(empty, x, y);
     }
 
-    public void updateCost(int cost) {
-        this.cost += cost;
+    /**
+     * if empty in empties:
+     *      switch empty point with a deep copy
+     * else:
+     *      add new point (x,y) to empties
+     *
+     * @param empty original point
+     * @param x x coordinate
+     * @param y y coordinate
+     */
+    private void updateEmpty(Point empty, int x, int y){
+        Point temp = new Point();
+        for(Point p : _empties){
+            if(p.x == empty.x && p.y == empty.y){
+                temp = p;
+            }
+        }
+
+        _empties.remove(temp);
+        _empties.add(new Point(x,y));
     }
 
-    public int getCost() {
-        return cost;
-    }
-
-    public int getDepth() {
-        return _leafDepth;
-    }
-
+    /**
+     * get all operators that can be done on given empty tile
+     *
+     * @param empty
+     * @return arraylist of operators
+     */
     private ArrayList<Operator> getSingleOperators(Point empty){
         ArrayList<Operator> legalOperators = new ArrayList<>();
-        int x, y;
 
         Operator[] operators = Operator.values();
 
+        // operators 4 -> 8 are single operators
         for(int i = 4; i < 8; i++){
             Operator operator = operators[i];
             if(inBound(empty, operator))
@@ -130,191 +199,386 @@ public class stateNode implements Comparable<stateNode> {
         return legalOperators;
     }
 
+    /**
+     * get all operators that can be done on two empty tiles in parallel
+     * @return arraylist of operators
+     */
     private ArrayList<Operator> getAdjacentOperators(){
         ArrayList<Operator> legalOperators = new ArrayList<>();
-        int x, y;
+        if(!twoEmpty)
+            return legalOperators;
 
-        Point empty1 = empties.get(0),  empty2 = empties.get(1);
-        Operator[] operators = Operator.values();
 
-        if(!adjacent()) {
-            for(int i = 0; i < 4; i++){
-                Operator operator = operators[i];
-                if(inBound(empty1, operator) && inBound(empty2, operator))
-                    legalOperators.add(operator);
-                //TODO check adj wrong size
-            }
-        }
+
+        Point empty = _empties.get(0);
+
+        boolean upAndDown = adjacentHorizontally();
+        boolean leftAndRight = adjacentVertically();
+
+        if(leftAndRight && inBound(empty,Operator.TWO_LEFT))
+            legalOperators.add(Operator.TWO_LEFT);
+
+        if(upAndDown && inBound(empty,Operator.TWO_DOWN))
+                legalOperators.add(Operator.TWO_DOWN);
+
+        if(leftAndRight && inBound(empty,Operator.TWO_RIGHT))
+                legalOperators.add(Operator.TWO_RIGHT);
+
+        if(upAndDown && inBound(empty,Operator.TWO_UP))
+                legalOperators.add(Operator.TWO_UP);
+
         return legalOperators;
     }
 
+    /**
+     * sort empty tiles by there x and then by there y
+     * the tile closest to (0,0) should be first
+     */
+    private void sortEmpty(){
+        if(!twoEmpty)
+            return;
+        //TODO check sort
+        Point point1 = this._empties.get(0);
+        Point point2 = this._empties.get(1);
+        if(point1.x != point2.x)
+            if(point1.y > point2.y)
+                Collections.swap(_empties, 0, 1);
+        else
+            if(point1.x > point2.x)
+                Collections.swap(_empties, 0, 1);
+    }
+
+
+    //                                   ++++++++ operators legality check ++++++++
+
+    /**
+     * check if operation is legal (prevent outOfBound exception)
+     * @param empty
+     * @param operator
+     * @return true if operation is legal
+     */
     private boolean inBound(Point empty, Operator operator){
         int x, y;
         x = operator.tile().x + empty.x;
         y = operator.tile().y + empty.y;
 
-        return x >= 0 && x < colLen() && y >= 0  && y < rowLen();
-    }
-    private boolean adjacent(){
-        Point empty1 = empties.get(0),  empty2 = empties.get(1);
-
-        boolean Horizontally = (empty1.x == empty2.x && Math.abs(empty1.y-empty2.y) <= 1);
-        boolean Vertically = (empty1.y == empty2.y && Math.abs(empty1.x-empty2.x) <= 1);
-
-        return Horizontally && Vertically;
+        return (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
     }
 
-    private void sortEmpty(){
-        Point point1 = this.empties.get(0);
-        Point point2 = this.empties.get(1);
-        if(point1.y != point2.y)
-            if(point1.y > point2.y)
-                Collections.swap(empties, 0, 1);
-        else
-            if(point1.x > point2.x)
-                Collections.swap(empties, 0, 1);
+    /**
+     * check operations legality
+     * @return true if tiles could move horizontally
+     */
+    private boolean adjacentHorizontally(){
+        Point empty1 = _empties.get(0),  empty2 = _empties.get(1);
+
+        return empty1.x == empty2.x && Math.abs(empty1.y-empty2.y) <= 1;
     }
 
-    private ArrayList<Point> getEmpties() {
-        setEmpties(this.empties);
-        return empties;
-    }
-    public void setEmpties(ArrayList<Point> emptyTiles) {
-        for(Point p: emptyTiles){
-            empties.remove(p);
-            empties.add(new Point(p.x, p.y));
-        }
+    /**
+     * check operations legality
+     * @return true if tiles could move vertically
+     */
+    private boolean adjacentVertically(){
+        Point empty1 = _empties.get(0),  empty2 = _empties.get(1);
+        return empty1.y == empty2.y && Math.abs(empty1.x-empty2.x) <= 1;
     }
 
-    public int[][] copyTiles() {
-        int[][] newTiles = new int[rowLen()][colLen()];
-        for(int i=0; i< rowLen(); i++)
-            System.arraycopy(this.tiles[i], 0, newTiles[i], 0, colLen());
-        return newTiles;
+
+    /**
+          _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\/\/\/\/  GETTERS \/\/\/\/\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+          ------------------------------
+     */
+
+    //                                   ++++++++ stateNode's variables ++++++++
+
+    /**
+     * @return node's unique id
+     */
+    public int getId() {
+        return _id;
     }
 
+    /**
+     * @return node's depth
+     */
+    public int getDepth() {
+        return _leafDepth;
+    }
+
+    /**
+     * @return node's tiles
+     */
     public int[][] getTiles() {
-        return tiles;
+        return _tiles;
     }
 
-    public void setOperation(Operator operation){
-        this._operator = operation;
-
-        int tile1 = getTile(prev.getEmpties().get(0));
-        int tile2 = getTile(prev.getEmpties().get(1));
-        //TODO check on 1 empty tile
-
-        //if two tiles was moved
-        if(_operator.ordinal()<4){
-            this.lastOperation =tile1 + "&" + tile2 + operation.symbol();
-        }else{
-            int tile = tile1 == -1 ? tile1 :tile2;
-            this.lastOperation = tile + operation.symbol();
-        }
-
+    /**
+     * @return empty tiles
+     */
+    private ArrayList<Point> getEmpties() {
+        return _empties;
     }
 
+    public boolean isTwoEmpty() {
+        return twoEmpty;
+    }
 
+    /**
+     * @return node's operator
+     */
+    public Operator get_operator() {
+        return _operator;
+    }
+
+    /**
+     * @return operation as string
+     */
     public String getLastOperation() {
-        return lastOperation;
+        //TODO change to getOperatorStr or build in each call
+         return _operationStr;
     }
 
+    /**
+     * @return get node's father
+     */
+    public stateNode getPrev() {
+        return _prev;
+    }
+
+    /**
+     * cost := total cost (cumulative cost of all operators in node's branch)
+     * @return path-to-node cost
+     */
+    public int getCost() {
+        return _cost;
+    }
+
+    /**
+     * getter
+     * @return node's heuristic value
+     */
+    public int Heuristic() {
+        return _heuristic;
+    }
+
+    /**
+     * getter
+     * @return true if node was marked out
+     */
+    public boolean isOut() {
+        return _out;
+    }
+
+
+    //                                       ++++++++ compute ++++++++
+
+    /**
+     * @return tiles row length
+     */
     public int rowLen() {
-        return tiles[0].length;
+        return _tiles.length;
     }
 
+    /**
+     * @return tiles column length
+     */
     public int colLen() {
-        return tiles.length;
+        return _tiles[0].length;
     }
 
-    private Point getEmpty(Point prev){
+    /**
+     * @return node's state as string (non unique)
+     */
+    public String key(){
+        //TODO check if called more then once
+        return Arrays.deepToString(this._tiles);
+    }
+
+    public String toString(){
+        String strID = String.valueOf(_id);
+        return strID + " \uF0DF "+ Arrays.deepToString(this._tiles)+"  $"+(_cost+_heuristic);
+    }
+
+    /**
+     *  get point with same coordinates as Point prev
+     * @param empty father's empty
+     * @return point from curr's empties
+     */
+    private Point getEmpty(Point empty){
+        //TODO check if needed
         Point curr = null;
-        for(Point p : empties) {
-            if (p.x == prev.x && p.y == prev.y) {
+        for(Point p : _empties) {
+            if (p.x == empty.x && p.y == empty.y) {
                 curr = p;
             }
         }
         return curr;
     }
 
-    public stateNode getPrev() {
-        return prev;
-    }
-
-    public String key(){
-        return Arrays.deepToString(this.tiles);
-    }
-
-    public void printState(){
-        for (int[] x : tiles)
-        {
-            for (int y : x)
-            {
-                System.out.print(y + " ");
-            }
-            System.out.println();
-        }
-        if((empties.get(0).x == 2 && empties.get(0).y == 0) && (empties.get(1).x == 2 && empties.get(1).y == 2))
-            System.out.println("here is the problem");
-        System.out.println("empty1 = ("+empties.get(0).x+","+empties.get(0).y+")");
-        System.out.println("empty2 = ("+empties.get(1).x+","+empties.get(1).y+")");
-    }
-
+    /**
+     * get tile value from given Point's coordinates
+     * @param p Point
+     * @return tile value
+     */
     public int getTile(Point p){
+        //TODO check if used
         return getTile(p.x,p.y);
     }
+
+    /**
+     * get tile value from given coordinates (x,y)
+     * @param x coordinate
+     * @param y coordinate
+     * @return tile value
+     */
     public int getTile(int x, int y){
-        return this.tiles[x][y];
+        return this._tiles[x][y];
     }
 
-    public int Heuristic() {
-        return heuristic;
-    }
-
+    /**
+     * getter
+     * @return node's value  f() = h() + g()
+     */
     public int f(){
-        return heuristic + cost;
+        return _heuristic + _cost;
     }
 
-    public void Heuristic(int heuristic) {
-        this.heuristic = heuristic;
+
+    //                               ++++++++ deep copy stateNode's var ++++++++
+
+    /**
+     * @return deep copy of node's tiles
+     */
+    public int[][] copyTiles() {
+        int[][] newTiles = new int[rowLen()][colLen()];
+        for(int i=0; i< rowLen(); i++)
+            System.arraycopy(this._tiles[i], 0, newTiles[i], 0, colLen());
+        return newTiles;
     }
 
-    public boolean isOut() {
-        return isOut;
+    /**
+     * @return deep copy of empty tiles list
+     */
+    public ArrayList<Point> copyEmpties(){
+        ArrayList<Point> newEmpties = new ArrayList<>();
+        for(Point p: this._empties){
+            newEmpties.add(new Point(p.x, p.y));
+        }
+        return newEmpties;
     }
 
-    public void markOut() {
-        isOut = true;
-    }
 
+    /**
+         _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\/\/\/\/  SETTERS \/\/\/\/\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         ------------------------------
+     */
+
+    /**
+     * initialize _empties
+     * empties <-  empty points in tiles
+     */
     private void setEmptyTiles(){
         for (int row = 0; row < rowLen(); row++)
             for (int col = 0; col < colLen(); col++)
-                if(tiles[row][col] == -1)
-                    empties.add(new Point(row, col));
+                if(_tiles[row][col] == -1)
+                    _empties.add(new Point(row, col));
+        if(_empties.size()==2)
+            twoEmpty = true;
     }
 
+    /**
+     * set one tile operation & operation str
+     *
+     * @param empty point that was moved
+     * @param operation node's operator
+     */
+    public void setOperation(Point empty, Operator operation){
+        // set state operator
+        this._operator = operation;
+
+        // set operator code
+        int x = operation.tile().x;
+        int y = operation.tile().y;
+        this._operationStr = getTile(empty.x+x, empty.y+y) + operation.symbol();
+    }
+
+    /**
+     * set two tiles operation & operation str
+     *
+     * @param operation node's operator
+     */
+    public void setOperation(Operator operation){
+        // set state operator
+        this._operator = operation;
+
+        Point empty1 = _prev.getEmpties().get(0);
+        Point empty2 = _prev.getEmpties().get(1);
+
+        int x = operation.tile().x;
+        int y = operation.tile().y;
+
+        // set operator code
+        int tile1 = getTile(empty1.x+x, empty1.y+y);
+        int tile2 = getTile(empty2.x+x, empty2.y+y);
+        this._operationStr =tile1 + "&" + tile2 + operation.symbol();
+    }
+
+    /**
+     * @param heuristic
+     */
+    public void Heuristic(int heuristic) {
+        this._heuristic = heuristic;
+    }
+
+    /**
+     * set _out as true
+     */
+    public void markOut(boolean out) {
+        _out = out;
+    }
+
+
+
+
+    /**
+         _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\/  METHOD'S OVERRIDING \/\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         ------------------------------
+     */
+
+    /**
+     * check if two stateNodes are same state
+     * @param o
+     * @return true if tiles are equal
+     */
     @Override
     public boolean equals(Object o) {
 
-        // If the object is compared with itself then return true
+        // o == this  -> true
         if (o == this) {
             return true;
         }
 
-        /* Check if o is an instance of Complex or not
-          "null instanceof [type]" also returns false */
+        // if o is a stateNode & do casting
         if (!(o instanceof stateNode other)) {
             return false;
         }
 
-        // typecast o to Complex so that we can compare data members
 
-        // Compare the data members and return accordingly
+        // compare this's and other's tiles
         int[][] otherTiles = other.getTiles();
 
         for (int i = 0; i < rowLen(); i++) {
-            if (!Arrays.equals(otherTiles[i], tiles[i])) {
+            if (!Arrays.equals(otherTiles[i], _tiles[i])) {
                 return false;
             }
 
@@ -323,14 +587,94 @@ public class stateNode implements Comparable<stateNode> {
         return true;
     }
 
+    /**
+     * compare nodes by there heuristic value
+     * @param other
+     * @return this > other ->  1
+     *         this == other -> 0
+     *         this < other -> -1
+     */
     @Override
     public int compareTo(@NotNull stateNode other) {
-        int other_heuristic = other.Heuristic();
-        int this_heuristic = heuristic;
-        return Integer.compare(this_heuristic, other_heuristic);
+        int other_f = other.f();
+        int this_f = f();
+        return Integer.compare(this_f, other_f);
     }
 
+    /**
+     * check who is bigger by there heuristic value
+     * @param other
+     * @return true if this bigger than other
+     */
     public boolean isGreaterThan(stateNode other){
-        return compareTo(other) == 0;
+        return compareTo(other) == 1;
+    }
+
+
+    /**
+         _______________________________
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         |/\/\/\  FOR DEBUGGING /\/\/\/\|
+         |/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\|
+         ------------------------------
+     */
+
+    /**
+     * check that empties are accurate
+     */
+
+    private void checkForErrors(){
+        checkEmpties();
+    }
+
+    public static int stateNodeNumber(){
+        return nodeCounter;
+    }
+
+    public void checkEmpties(){
+        for(Point empty: _empties){
+            int emptyVal = getTile(empty);
+            if( emptyVal != -1){
+                printState();
+                throw new RuntimeException("ERROR! \nEmpty point ("+empty.x+","+empty.y+") is not empty."+", nodeId =="+ _id);
+            }
+            if(_empties.size()>2){
+                throw new RuntimeException("ERROR! \nthere are currently "+ _empties.size()+"empty points"+", nodeId =="+ _id);
+            }
+            if(this._prev != null) {
+                if (!checkAdjacentToFather(empty)) {
+                    throw new RuntimeException("ERROR! \nPoint (" + empty.x + "," + empty.y + ") isnt adjacent to prev empties .\nnodeId =="+ _id);
+                }
+            }
+        }
+    }
+
+    private boolean checkAdjacentToFather(Point empty){
+        ArrayList<Point> prevEmpties = _prev.getEmpties();
+        for(Point fatherEmpty : prevEmpties) {
+            if(Math.abs((empty.x - fatherEmpty.x) + (empty.y - fatherEmpty.y))< 2)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * print state for debug purposes
+     */
+    public void printState(){
+        int prevID = _prev == null ? -1: _prev.getId();
+        String operator = _operator == null ? "": _operator.name();
+
+        System.out.println("=== father := "+ prevID + " , this ID := "+_id+", "+operator +" ===");
+        for (int[] x : _tiles)
+        {
+            for (int y : x)
+            {
+                System.out.print(y + " ");
+            }
+            System.out.println();
+        }
+        for(Point empty: _empties)
+            System.out.println("empty = ("+empty.x+","+empty.y+")");
     }
 }
