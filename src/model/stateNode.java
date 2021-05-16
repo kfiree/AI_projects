@@ -1,3 +1,5 @@
+package model;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -130,7 +132,8 @@ public class stateNode implements Comparable<stateNode> {
 
         //move single tile
         for(Point empty : _empties) {
-            for (Operator operation : getSingleOperators(empty))
+            ArrayList<Operator> singleOperators = getSingleOperators(empty);
+            for (Operator operation :singleOperators)
                 children.add(new stateNode(this, operation, empty));
         }
 
@@ -262,7 +265,9 @@ public class stateNode implements Comparable<stateNode> {
         x = operator.tile().x + empty.x;
         y = operator.tile().y + empty.y;
 
-        return (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
+        boolean inBound = (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
+
+        return inBound;
     }
 
     /**

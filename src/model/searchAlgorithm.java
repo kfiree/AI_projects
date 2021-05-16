@@ -1,3 +1,5 @@
+package model;
+
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -27,6 +29,7 @@ enum Result{
 public class searchAlgorithm {
 
     Board board;
+    int nope=0;
 //    Hashtable<String, stateNode> FrontierTable= new Hashtable<>(), Explored = new Hashtable<>();
 
     Result result;
@@ -59,7 +62,7 @@ public class searchAlgorithm {
  */
 
         //  1. L  start
-        LinkedList<stateNode> Frontier = new LinkedList<>();
+        Queue<stateNode> Frontier = new LinkedList<>();
         Frontier.add(start);
         Hashtable<String, stateNode> FrontierTable = new Hashtable<>();
 
@@ -70,20 +73,20 @@ public class searchAlgorithm {
         while (!Frontier.isEmpty()) {
 
             //  1.  n  L.remove_front()
-            stateNode n = Frontier.remove();
-//            System.out.println("++++++++++++++++ FATHER ++++++++++++++++");
-//            n.printState();
+            stateNode n = Frontier.poll();
 
             // 2. C  n
             Explored.put(n.key(), n);
-            ArrayList<stateNode> children = n.getChildren();
 
             // 3. For each allowed operator on n
+            ArrayList<stateNode> children = n.getChildren();
             for(stateNode operator :  children){
                 // 1. g  operator(n)
 
                 // 2. If g not in C and not in L
                 if(!Explored.containsKey(operator.key()) && !FrontierTable.containsKey(operator.key())){
+                    System.out.println("DOPE ="+ ++nope+ ", node := "+ operator.toString());
+//                    System.out.println(operator.toString());
                     // 1. If goal(g) return path(g)
                     if(operator.equals(goal)){
                         pathHandler(operator) ;
@@ -93,6 +96,9 @@ public class searchAlgorithm {
                     // 2. L.insert(g)
                     Frontier.add(operator);
                     FrontierTable.put(operator.key(), operator);
+                }
+                else{
+
                 }
             }
 
@@ -600,7 +606,7 @@ DFBnB(Node start, Vector Goals)
 
     private int setHeuristic(stateNode curr){
 //        return manhattan(curr)*Operator.onePrice();
-        return (manhattan(curr)+linearConflict(curr)*2)*Operator.onePrice();
+        return (manhattan(curr)+linearConflict(curr)*2)* Operator.onePrice();
     }
 
     private int manhattan(stateNode curr) {

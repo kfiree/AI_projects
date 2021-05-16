@@ -1,6 +1,9 @@
+package app;
+
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import model.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
