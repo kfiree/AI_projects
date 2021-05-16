@@ -29,7 +29,8 @@ enum Result{
 public class searchAlgorithm {
 
     Board board;
-    int nope=0;
+    private int nodesCtr = 0;
+    private double time = 0;
 //    Hashtable<String, stateNode> FrontierTable= new Hashtable<>(), Explored = new Hashtable<>();
 
     Result result;
@@ -40,7 +41,7 @@ public class searchAlgorithm {
         this.board = board;
     }
 
-    public void BFS(){
+    public List<stateNode> BFS(){
         System.out.println("running BFS algorithm...");
         stateNode start = this.board.getCurr();
         stateNode goal = this.board.getGoal();
@@ -85,12 +86,11 @@ public class searchAlgorithm {
 
                 // 2. If g not in C and not in L
                 if(!Explored.containsKey(operator.key()) && !FrontierTable.containsKey(operator.key())){
-                    System.out.println("DOPE ="+ ++nope+ ", node := "+ operator.toString());
+//                    System.out.println("DOPE ="+ ++nope+ ", node := "+ operator.toString());
 //                    System.out.println(operator.toString());
                     // 1. If goal(g) return path(g)
                     if(operator.equals(goal)){
-                        pathHandler(operator) ;
-                        return;
+                        return pathHandler(operator) ;
                     }
 
                     // 2. L.insert(g)
@@ -103,10 +103,10 @@ public class searchAlgorithm {
             }
 
         }
-
+        return null;
     }
 
-    public void AStar(){
+    public List<stateNode> AStar(){
         System.out.println("running A* algorithm...");
 
         /*
@@ -151,8 +151,7 @@ public class searchAlgorithm {
 
             // 2. If goal(n) return path(n)
             if(currState.equals(goal)){
-                pathHandler(currState);
-                return;
+                return pathHandler(currState);
             }
             int a[][] = {{1,3,4},
                         {-1,-1,6},
@@ -202,9 +201,10 @@ public class searchAlgorithm {
                 }
             }
         }
+        return null;
     }
 
-    public void DFID(){
+    public List<stateNode> DFID(){
         System.out.println("running DFID algorithm...");
 
     /*
@@ -232,11 +232,11 @@ public class searchAlgorithm {
             // 3. If result ≠ cutoff then return result
             if(result != Result.CUTOFF) {
                 if(result == Result.GOAL){
-                    pathHandler(result.getGoal());
+                    return pathHandler(result.getGoal());
                 }
-                return;
             }
         }
+        return null;
     }
 
     public Result Limited_DFS(stateNode curr, stateNode goal, int limit, Hashtable<String, stateNode> H){
@@ -318,7 +318,7 @@ public class searchAlgorithm {
         }
     }
 
-    public void IDAStar(){
+    public List<stateNode> IDAStar(){
         System.out.println("running IDA* algorithm...");
     /*
      IDA*(Node start, Vector Goals)
@@ -427,8 +427,7 @@ public class searchAlgorithm {
                         }
                         // 4. If goal(g) then return path(g) //all the “out” nodes in L
                         if (operator.equals(goal)) {
-                            pathHandler(operator);
-                            return;
+                            return pathHandler(operator);
                         }
                         // 5. L.insert(g) and H.insert(g)
                         L.push(operator);
@@ -441,7 +440,7 @@ public class searchAlgorithm {
             threshold = minF;
         }
         // 4. Return false
-        return;
+        return null;
     }
 
     public List<stateNode> DFBnB(){
@@ -589,7 +588,7 @@ DFBnB(Node start, Vector Goals)
 
         Collections.reverse(path);
 
-        printPath(path);
+//        printPath(path);
         return path;
     }
 
@@ -666,4 +665,11 @@ DFBnB(Node start, Vector Goals)
         return conflicts;
     }
 
+    public int getNodesNumber() {
+        return nodesCtr;
+    }
+
+    public double getAlgoTime() {
+        return time;
+    }
 }

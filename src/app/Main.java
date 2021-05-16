@@ -4,8 +4,15 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import model.*;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 //enum ALGO  {BFS,
 //        DFID,
@@ -14,13 +21,15 @@ import java.util.Scanner;
 //        DFBnB}
 
 public class Main {
-    static Board board;
+    static Board _board;
+    static long _duration;
+    static searchAlgorithm _puzzleSolver;
+    static stateNode _goal, _start;
+
     public static void main(String[] args){
     readFile();
 
     }
-
-    static stateNode goal, start;
 
 
     private static void readFile() {
@@ -28,12 +37,10 @@ public class Main {
         int rowLen, colLen;
         boolean timeInstruction, openInstruction;
         Scanner file = null;
-//        System.out.println(new File("."));
-//        System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
         //      ==== OPEN FILE ====
         try{
-            file = new Scanner(new File("./src/data/input1.txt"));
+            file = new Scanner(new File("./src/controller/input1.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("file not found");
             e.printStackTrace();
@@ -49,42 +56,77 @@ public class Main {
         colLen = Integer.parseInt(dimensions[1]);
 
         //       ==== READ START AND GOAL NODE ====
-        start = readState(file, rowLen, colLen);
+        _start = readState(file, rowLen, colLen);
 
         file.nextLine();
-        goal  = readState(file, rowLen, colLen);
+        _goal  = readState(file, rowLen, colLen);
 
         file.close();
 
         //      ==== SET BOARD ====
-        board = new Board(timeInstruction, openInstruction, rowLen, colLen, start, goal);
+        _board = new Board(timeInstruction, openInstruction, rowLen, colLen, _start, _goal);
 
 
         //      ==== RUN ALGORITHM ====
-
-//
-//        Scanner myObj = new Scanner(System.in);
-//        System.out.println(" Choose operation:\n 1) BFS \n 2) DFID \n 3) A*\n 4) IDA*\n 5)DFBnB");
-//        int index = myObj.nextInt();
-//        ALGO algo =  ALGO.values()[index];
-//        System.out.println(algo.name());
-        runAlgo(algoType, board);
+        runAlgo(algoType, _board);
 
     }
 
     private static void runAlgo(String algo, Board board){
         // BFS, DFID, A*, IDA*, DFBnB
-        searchAlgorithm puzzleSolver = new searchAlgorithm(board);
-
+        _puzzleSolver = new searchAlgorithm(board);
+        java.util.List<stateNode> path;
+        long startTime = System.currentTimeMillis();
         switch (algo) {
-            case "BFS" -> puzzleSolver.BFS();
-            case "DFID" -> puzzleSolver.DFID();
-            case "A*" -> puzzleSolver.AStar();
-            case "IDA*" -> puzzleSolver.IDAStar();
-            case "DFBnB" -> puzzleSolver.DFBnB();
+            case "BFS" ->  path = _puzzleSolver.BFS();
+            case "DFID" -> path = _puzzleSolver.DFID();
+            case "A*" -> path = _puzzleSolver.AStar();
+            case "IDA*" -> path = _puzzleSolver.IDAStar();
+            case "DFBnB" -> path = _puzzleSolver.DFBnB();
+
             default -> throw new IllegalArgumentException("Wrong algorithm instruction format - \"" + algo + "\".");
         }
+        _duration = (System.currentTimeMillis() - startTime);
+        pathHandler(path, _puzzleSolver);
     }
+
+    private static void pathHandler(java.util.List<stateNode> path, searchAlgorithm algo){
+        try {
+            File outPut = new File("output.txt");
+            FileWriter myWriter = new FileWriter(outPut);
+            StringBuilder sb = new StringBuilder();
+
+            for(stateNode state: path){
+                sb.append(state.getLastOperation());
+//                System.out.print(" " + state.getLastOperation()+" ");
+                if(!state.equals(_goal)){
+                    sb.append('-');
+                }
+            }
+            sb.append('\n');
+            sb.append("Num: ");
+            sb.append(algo.getNodesNumber());
+
+            sb.append('\n');
+            sb.append("Cost: ");
+            sb.append(path.get(path.size() - 1).getCost());
+
+            sb.append('\n');
+            double timeInSeconds = _duration / 1000.0;
+            sb.append(timeInSeconds);
+            sb.append(" seconds");
+
+            System.out.println(sb);
+
+            myWriter.write(sb.toString());
+            myWriter.close();
+
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
 
     private static stateNode readState(Scanner file, int rowLen, int colLen) {
         int[][] tiles = new int[rowLen][colLen];
