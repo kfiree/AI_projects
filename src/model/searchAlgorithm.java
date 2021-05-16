@@ -29,7 +29,7 @@ enum Result{
 public class searchAlgorithm {
 
     Board board;
-    private int nodesCtr = 0;
+    private int nodesCtr = 1;
     private double time = 0;
 //    Hashtable<String, stateNode> FrontierTable= new Hashtable<>(), Explored = new Hashtable<>();
 
@@ -42,7 +42,7 @@ public class searchAlgorithm {
     }
 
     public List<stateNode> BFS(){
-        System.out.println("running BFS algorithm...");
+//        System.out.println("running BFS algorithm...");
         stateNode start = this.board.getCurr();
         stateNode goal = this.board.getGoal();
 
@@ -86,8 +86,7 @@ public class searchAlgorithm {
 
                 // 2. If g not in C and not in L
                 if(!Explored.containsKey(operator.key()) && !FrontierTable.containsKey(operator.key())){
-//                    System.out.println("DOPE ="+ ++nope+ ", node := "+ operator.toString());
-//                    System.out.println(operator.toString());
+                    nodesCtr++;
                     // 1. If goal(g) return path(g)
                     if(operator.equals(goal)){
                         return pathHandler(operator) ;
@@ -107,7 +106,7 @@ public class searchAlgorithm {
     }
 
     public List<stateNode> AStar(){
-        System.out.println("running A* algorithm...");
+//        System.out.println("running A* algorithm...");
 
         /*
              A*(Node start, Vector Goals)
@@ -142,6 +141,7 @@ public class searchAlgorithm {
 
         // 3. While L not empty loop
         while(!L.isEmpty()){
+            printOpenList(L);
 
             // 1. n  L.remove_front()
             stateNode currState = L.poll();
@@ -153,31 +153,24 @@ public class searchAlgorithm {
             if(currState.equals(goal)){
                 return pathHandler(currState);
             }
-            int a[][] = {{1,3,4},
-                        {-1,-1,6},
-                        {2,5,7}};
-            boolean b= true;
-            for (int i = 0; i < currState.rowLen(); i++) {
-                if (!Arrays.equals(a[i], currState.getTiles()[i])) {
+//            int a[][] = {{1,3,4},
+//                        {-1,-1,6},
+//                        {2,5,7}};
+//            boolean b= true;
+//            for (int i = 0; i < currState.rowLen(); i++) {
+//                if (!Arrays.equals(a[i], currState.getTiles()[i])) {
+//
+//                    b=false;
+//                }
+//            }
 
-                    b=false;
-                }
-
-            }
-            if(b)
-                System.out.println("");
-            if(currState.getLastOperation()!= null)
-                if(currState.getLastOperation().equals("3U") )
-                    System.out.println("");
-
-            if(currState.getId() == 31)
-                System.out.println("");
             // 3. C  n
             C.put(currState.key(), currState);
 
             // 4. For each allowed operator on n
             ArrayList<stateNode> children = currState.getChildren();
             for(stateNode operator : children){
+                nodesCtr++;
                 // 1. x  operator(n)
                 operator.Heuristic(setHeuristic(operator));
 
@@ -205,7 +198,7 @@ public class searchAlgorithm {
     }
 
     public List<stateNode> DFID(){
-        System.out.println("running DFID algorithm...");
+//        System.out.println("running DFID algorithm...");
 
     /*
         DFID(Node start, Vector Goals)
@@ -319,7 +312,7 @@ public class searchAlgorithm {
     }
 
     public List<stateNode> IDAStar(){
-        System.out.println("running IDA* algorithm...");
+//        System.out.println("running IDA* algorithm...");
     /*
      IDA*(Node start, Vector Goals)
          1. L  make_stack and H  make_hash_table
@@ -374,6 +367,7 @@ public class searchAlgorithm {
             // 3. While L is not empty
             while (!L.isEmpty()){
 
+                printOpenList(L);
                 // 1. n  L.remove_front()
                 stateNode n = L.pop();
 //                H.remove(pop.key()); //TODO ?
@@ -391,6 +385,7 @@ public class searchAlgorithm {
                     //3. For each allowed operator on n
                     ArrayList<stateNode> children = n.getChildren();
                     for (stateNode operator : children) {
+                        nodesCtr++;
                         operator.Heuristic(setHeuristic(operator));
                         // 1. If f(g) > t
                         if (operator.f() > threshold) {
@@ -444,7 +439,7 @@ public class searchAlgorithm {
     }
 
     public List<stateNode> DFBnB(){
-        System.out.println("running DFBnB algorithm...");
+//        System.out.println("running DFBnB algorithm...");
 /*
 
 DFBnB(Node start, Vector Goals)
@@ -512,8 +507,10 @@ DFBnB(Node start, Vector Goals)
                 ArrayList<stateNode> children = state.getChildren();
 
                 // 3. sort the nodes in N according to their f values (increasing order)
-                for(stateNode child :  children)
+                for(stateNode child :  children) {
+                    nodesCtr++;
                     child.Heuristic(setHeuristic(child));
+                }
                 Collections.sort(children);
 
                 // 4. For each node g from N according to the order of N
@@ -586,7 +583,7 @@ DFBnB(Node start, Vector Goals)
             curr = curr.getPrev();
         }
 
-        Collections.reverse(path);
+//        Collections.reverse(path);
 
 //        printPath(path);
         return path;
@@ -605,7 +602,7 @@ DFBnB(Node start, Vector Goals)
 
     private int setHeuristic(stateNode curr){
 //        return manhattan(curr)*Operator.onePrice();
-        return (manhattan(curr)+linearConflict(curr)*2)* Operator.onePrice();
+        return (manhattan(curr)+linearConflict(curr)*2)* (Operator.onePrice()+1);
     }
 
     private int manhattan(stateNode curr) {
@@ -667,6 +664,12 @@ DFBnB(Node start, Vector Goals)
 
     public int getNodesNumber() {
         return nodesCtr;
+    }
+
+    private void printOpenList(Object a){
+        if(board.isOpen()){
+            System.out.println(a);
+        }
     }
 
     public double getAlgoTime() {

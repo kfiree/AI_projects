@@ -30,13 +30,13 @@ public class Board {
                 9  10 11 _
      */
     public Board(boolean time, boolean open, int rowLen, int colLen, stateNode start, stateNode goal) {
-//        this.goal= start;
-//        updateGoalMap(start);
-//        this.curr = goal;
+        this.goal= start;
+        updateGoalMap(start);
+        this.curr = goal;
 
-        this.goal= goal;
-        updateGoalMap(goal);
-        this.curr = start;
+//        this.goal= goal;
+//        updateGoalMap(goal);
+//        this.curr = start;
 
         this.time = time;
         this.open = open;
@@ -45,7 +45,6 @@ public class Board {
     }
 
     public void updateGoalMap(stateNode goal){
-        int[][] tiles = goal.getTiles();
         for (int row = 0; row < goal.rowLen(); row++) {
             for (int col = 0; col < goal.colLen(); col++) {
                 int tileNum = goal.getTile(row, col);
@@ -86,7 +85,7 @@ public class Board {
         return open;
     }
 
-    public boolean isTime() {
+    public boolean showTime() {
         return time;
     }
 

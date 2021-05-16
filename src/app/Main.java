@@ -7,12 +7,7 @@ import model.*;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 //enum ALGO  {BFS,
 //        DFID,
@@ -40,7 +35,7 @@ public class Main {
 
         //      ==== OPEN FILE ====
         try{
-            file = new Scanner(new File("./src/controller/input1.txt"));
+            file = new Scanner(new File("./src/input.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("file not found");
             e.printStackTrace();
@@ -97,26 +92,27 @@ public class Main {
             StringBuilder sb = new StringBuilder();
 
             for(stateNode state: path){
-                sb.append(state.getLastOperation());
-//                System.out.print(" " + state.getLastOperation()+" ");
-                if(!state.equals(_goal)){
-                    sb.append('-');
-                }
+                sb.append(state.getLastOperation() + '-');
             }
+            sb.setLength(sb.length() - 1);
+
             sb.append('\n');
             sb.append("Num: ");
             sb.append(algo.getNodesNumber());
 
             sb.append('\n');
             sb.append("Cost: ");
-            sb.append(path.get(path.size() - 1).getCost());
+            sb.append(path.get(0).getCost());
 
-            sb.append('\n');
-            double timeInSeconds = _duration / 1000.0;
-            sb.append(timeInSeconds);
-            sb.append(" seconds");
+            if(_board.showTime() ){
+                sb.append('\n');
+                double timeInSeconds = _duration / 1000.0;
+                sb.append(timeInSeconds);
+                sb.append(" seconds");
+            }
 
             System.out.println(sb);
+            System.out.println(path.get(0).getId());
 
             myWriter.write(sb.toString());
             myWriter.close();

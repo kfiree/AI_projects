@@ -5,14 +5,23 @@ import java.awt.*;
 public enum Operator
 {
 
-    TWO_LEFT("L", 6, new Point(0,1)),
-    TWO_UP("U", 7, new Point(1,0)),
-    TWO_RIGHT("R", 6, new Point(0, -1)),
-    TWO_DOWN("D", 7, new Point(-1, 0)),
-    LEFT("L", 5, new Point(0, 1)),
-    UP("U", 5, new Point(1,0)),
-    RIGHT("R", 5, new Point(0, -1)),
-    DOWN("D", 5, new Point(-1, 0));
+//    TWO_LEFT("L", 6, new Point(0,1)),
+//    TWO_UP("U", 7, new Point(1,0)),
+//    TWO_RIGHT("R", 6, new Point(0, -1)),
+//    TWO_DOWN("D", 7, new Point(-1, 0)),
+//    LEFT("L", 5, new Point(0, 1)),
+//    UP("U", 5, new Point(1,0)),
+//    RIGHT("R", 5, new Point(0, -1)),
+//    DOWN("D", 5, new Point(-1, 0));
+
+    TWO_LEFT("R", 6, new Point(0,1)),
+    TWO_UP("D", 7, new Point(1,0)),
+    TWO_RIGHT("L", 6, new Point(0, -1)),
+    TWO_DOWN("U", 7, new Point(-1, 0)),
+    LEFT("R", 5, new Point(0, 1)),
+    UP("D", 5, new Point(1,0)),
+    RIGHT("L", 5, new Point(0, -1)),
+    DOWN("U", 5, new Point(-1, 0));
 
     // declaring private variable for getting values
     private final String symbol;

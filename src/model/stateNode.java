@@ -51,10 +51,7 @@ public class stateNode implements Comparable<stateNode> {
      * @param operator
      */
     public stateNode(stateNode prev, Operator operator){
-        if(ID_Generator == 36)
-            System.out.println("");
         // set simple variables
-        nodeCounter++;
         this._id = ++ID_Generator; //id
         this._leafDepth = prev.getDepth()+1; // leaf depth
         this._prev = prev;
@@ -82,9 +79,7 @@ public class stateNode implements Comparable<stateNode> {
      * @param empty
      */
     public stateNode(stateNode prev, Operator operator, Point empty){
-        nodeCounter++;
-
-        // set simple variables
+                // set simple variables
         this._id = ++ID_Generator; //id
         this._leafDepth = prev.getDepth()+1; // leaf depth
         this._prev = prev;
@@ -265,9 +260,10 @@ public class stateNode implements Comparable<stateNode> {
         x = operator.tile().x + empty.x;
         y = operator.tile().y + empty.y;
 
-        boolean inBound = (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
+        return (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
 
-        return inBound;
+//        boolean inBound = (x >= 0 && x < rowLen() && y >= 0  && y < colLen()) && (getTile(x,y) != -1);
+//        return inBound;
     }
 
     /**
