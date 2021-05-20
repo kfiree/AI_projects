@@ -1,9 +1,5 @@
-package app;
-
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-import model.*;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,11 +11,13 @@ import java.util.Scanner;
 //        IDAStar,
 //        DFBnB}
 
-public class Main {
+public class Ex1 {
     static Board _board;
     static long _duration;
     static searchAlgorithm _puzzleSolver;
     static stateNode _goal, _start;
+    static int rowLen, colLen, startEdges, goalEdges;
+    static boolean reverse=false;
 
     public static void main(String[] args){
     readFile();
@@ -29,13 +27,12 @@ public class Main {
 
     private static void readFile() {
         String algoType;
-        int rowLen, colLen;
         boolean timeInstruction, openInstruction;
         Scanner file = null;
 
         //      ==== OPEN FILE ====
         try{
-            file = new Scanner(new File("./src/input.txt"));
+            file = new Scanner(new File("input.txt"));
         } catch (FileNotFoundException e) {
             System.out.println("file not found");
             e.printStackTrace();
@@ -46,22 +43,24 @@ public class Main {
         algoType = file.nextLine(); // types := BFS, DFID, A*, IDA*, DFBnB
         timeInstruction =  readTime(file.nextLine()); // print file
         openInstruction = readOpen(file.nextLine()); // print openList
-        String[] dimensions = file.nextLine().split("x"); //
+        String[] dimensions = file.nextLine().split("x");
         rowLen = Integer.parseInt(dimensions[0]);
         colLen = Integer.parseInt(dimensions[1]);
 
         //       ==== READ START AND GOAL NODE ====
-        _start = readState(file, rowLen, colLen);
-
+        int[][] startTiles = readTiles(file, rowLen, colLen, true);
         file.nextLine();
-        _goal  = readState(file, rowLen, colLen);
-
+        int[][] goalTiles = readTiles(file, rowLen, colLen, false);
         file.close();
 
+
+        reverse = goalEdges > startEdges ? true:false;
+        _start = new stateNode(startTiles, reverse);
+        _goal = new stateNode(goalTiles, reverse);
+
         //      ==== SET BOARD ====
-        _board = new Board(timeInstruction, openInstruction, rowLen, colLen, _start, _goal);
-
-
+        _board = new Board(timeInstruction, openInstruction, rowLen, colLen, _start, _goal, reverse);
+        
         //      ==== RUN ALGORITHM ====
         runAlgo(algoType, _board);
 
@@ -87,22 +86,31 @@ public class Main {
 
     private static void pathHandler(java.util.List<stateNode> path, searchAlgorithm algo){
         try {
-            File outPut = new File("output.txt");
-            FileWriter myWriter = new FileWriter(outPut);
+            String fileName = "output.txt";
+            File outPut = new File(fileName);
+            FileWriter myWriter = new FileWriter(outPut, true);
             StringBuilder sb = new StringBuilder();
 
+//            if(!_board.isReverse())
+//            Collections.reverse(path);
+
+            if(path == null){
+                sb.append("No path\nNum:");
+                myWriter.write(sb.toString());
+                myWriter.close();
+            }
             for(stateNode state: path){
-                sb.append(state.getLastOperation() + '-');
+                sb.append(state.getLastOperation()+'-');
             }
             sb.setLength(sb.length() - 1);
 
             sb.append('\n');
             sb.append("Num: ");
-            sb.append(algo.getNodesNumber());
+            sb.append(path.get(0).stateNodeNumber());
 
             sb.append('\n');
             sb.append("Cost: ");
-            sb.append(path.get(0).getCost());
+            sb.append(Math.max(path.get(0).getCost(),path.get(path.size()-1).getCost()));
 
             if(_board.showTime() ){
                 sb.append('\n');
@@ -110,9 +118,6 @@ public class Main {
                 sb.append(timeInSeconds);
                 sb.append(" seconds");
             }
-
-            System.out.println(sb);
-            System.out.println(path.get(0).getId());
 
             myWriter.write(sb.toString());
             myWriter.close();
@@ -124,7 +129,7 @@ public class Main {
     }
 
 
-    private static stateNode readState(Scanner file, int rowLen, int colLen) {
+    private static int[][] readTiles(Scanner file, int rowLen, int colLen, boolean isFirst) {
         int[][] tiles = new int[rowLen][colLen];
 
         for (int i = 0; i < rowLen; i++) {
@@ -132,11 +137,18 @@ public class Main {
 
             for (int j = 0; j < colLen; j++) {
                 int tile = readTile(numbers[j]);
+                
+                
+                if (tile == -1 && isFirst)
+                    startEdges += countEdges(i, j, rowLen, colLen);
+                else if(tile == -1)
+                    goalEdges += countEdges(i, j, rowLen, colLen);
+                
                 tiles[i][j] = tile;
             }
         }
 
-        return new stateNode(tiles);
+        return tiles;
     }
 
     private static boolean readTime(String Instruction) {
@@ -155,6 +167,33 @@ public class Main {
             return false;
         }
         throw new IllegalArgumentException("Wrong open instruction format - \""+Instruction+"\".");
+    }
+
+    private static int countEdges(int x, int y, int row, int col){
+        int counter = 0;
+        if(x == row-1)
+            counter++;
+        if(y == col-1)
+            counter++;
+        if(x == 0)
+            counter++;
+        if(y == 0)
+            counter++;
+        
+        return counter;
+    }
+    
+    private static String getReversedOperation(stateNode state){
+        String operation = state.getLastOperation();
+        String reversedOpp;
+        reversedOpp = operation.replace('U', 'D');
+        if(reversedOpp.equals(operation))
+            reversedOpp = operation.replace('R', 'L');
+        if(reversedOpp.equals(operation))
+            reversedOpp = operation.replace('D', 'U');
+        if(reversedOpp.equals(operation))
+            reversedOpp = operation.replace('L', 'R');
+        return reversedOpp;
     }
 
     private static int readTile(String tileStr) {

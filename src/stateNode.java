@@ -1,7 +1,3 @@
-package model;
-
-import org.jetbrains.annotations.NotNull;
-
 import java.awt.*;
 import java.util.*;
 
@@ -11,14 +7,13 @@ public class stateNode implements Comparable<stateNode> {
     private final int _id, _leafDepth;
     private final int[][] _tiles;
     private ArrayList<Point> _empties = new ArrayList<>();
-    private  static int nodeCounter;
     private boolean twoEmpty;
 
     // === ALGORITHM'S VARIABLES ===
     private Operator _operator;
     private String _operationStr;
     private final stateNode _prev;
-    private int _cost, _heuristic;
+    private double _cost, _heuristic;
     private boolean _out;
 
 
@@ -34,12 +29,13 @@ public class stateNode implements Comparable<stateNode> {
      * default constructor
      * @param tiles
      */
-    public stateNode(int[][] tiles) {
+    public stateNode(int[][] tiles, boolean rev) {
         this._leafDepth = 0;
         this._id = ++ID_Generator;
         this._tiles = tiles;
         this._prev = null;
         setEmptyTiles();
+//        this.r = rev ? 8:0;
 
         checkForErrors();
 //        printState();
@@ -56,6 +52,7 @@ public class stateNode implements Comparable<stateNode> {
         this._leafDepth = prev.getDepth()+1; // leaf depth
         this._prev = prev;
         this.twoEmpty = prev.isTwoEmpty();
+//        this.r = prev.r();
 
         //deep copy prev's data
         this._tiles = prev.copyTiles();
@@ -69,7 +66,6 @@ public class stateNode implements Comparable<stateNode> {
 
         this._cost = prev.getCost() + operator.price();
         checkForErrors();
-//        printState();
     }
 
     /**
@@ -85,6 +81,7 @@ public class stateNode implements Comparable<stateNode> {
         this._prev = prev;
         this._cost = prev.getCost() + operator.price();
         this.twoEmpty = prev.isTwoEmpty();
+//        this.r = prev.r();
 
         //deep copy prev's data
         this._tiles = prev.copyTiles();
@@ -95,7 +92,6 @@ public class stateNode implements Comparable<stateNode> {
         swapOne(empty);
 
         checkForErrors();
-//        printState();
     }
 
 
@@ -186,11 +182,10 @@ public class stateNode implements Comparable<stateNode> {
     private ArrayList<Operator> getSingleOperators(Point empty){
         ArrayList<Operator> legalOperators = new ArrayList<>();
 
-        Operator[] operators = Operator.values();
+        Operator[] operators = Arrays.copyOfRange(Operator.values(), 4, 8);
 
         // operators 4 -> 8 are single operators
-        for(int i = 4; i < 8; i++){
-            Operator operator = operators[i];
+        for(Operator operator : operators){
             if(inBound(empty, operator))
                 legalOperators.add(operator);
         }
@@ -209,21 +204,22 @@ public class stateNode implements Comparable<stateNode> {
 
 
         Point empty = _empties.get(0);
+        Operator[] operators = Arrays.copyOfRange(Operator.values(), 0, 4);
 
         boolean upAndDown = adjacentHorizontally();
         boolean leftAndRight = adjacentVertically();
 
-        if(leftAndRight && inBound(empty,Operator.TWO_LEFT))
-            legalOperators.add(Operator.TWO_LEFT);
+        if(leftAndRight && inBound(empty,operators[0]))
+            legalOperators.add(operators[0]);
 
-        if(upAndDown && inBound(empty,Operator.TWO_DOWN))
-                legalOperators.add(Operator.TWO_DOWN);
+        if(upAndDown && inBound(empty,operators[1]))
+                legalOperators.add(operators[1]);
 
-        if(leftAndRight && inBound(empty,Operator.TWO_RIGHT))
-                legalOperators.add(Operator.TWO_RIGHT);
+        if(leftAndRight && inBound(empty, operators[2]))
+                legalOperators.add(operators[2]);
 
-        if(upAndDown && inBound(empty,Operator.TWO_UP))
-                legalOperators.add(Operator.TWO_UP);
+        if(upAndDown && inBound(empty,operators[3]))
+                legalOperators.add(operators[3]);
 
         return legalOperators;
     }
@@ -350,11 +346,15 @@ public class stateNode implements Comparable<stateNode> {
         return _prev;
     }
 
+//    public int r() {
+//        return r;
+//    }
+
     /**
      * cost := total cost (cumulative cost of all operators in node's branch)
      * @return path-to-node cost
      */
-    public int getCost() {
+    public double getCost() {
         return _cost;
     }
 
@@ -362,7 +362,7 @@ public class stateNode implements Comparable<stateNode> {
      * getter
      * @return node's heuristic value
      */
-    public int Heuristic() {
+    public double Heuristic() {
         return _heuristic;
     }
 
@@ -444,7 +444,7 @@ public class stateNode implements Comparable<stateNode> {
      * getter
      * @return node's value  f() = h() + g()
      */
-    public int f(){
+    public double f(){
         return _heuristic + _cost;
     }
 
@@ -528,13 +528,13 @@ public class stateNode implements Comparable<stateNode> {
         // set operator code
         int tile1 = getTile(empty1.x+x, empty1.y+y);
         int tile2 = getTile(empty2.x+x, empty2.y+y);
-        this._operationStr =tile1 + "&" + tile2 + operation.symbol();
+        this._operationStr =Math.min(tile1,tile2) + "&" + Math.max(tile1,tile2) + operation.symbol();
     }
 
     /**
      * @param heuristic
      */
-    public void Heuristic(int heuristic) {
+    public void Heuristic(double heuristic) {
         this._heuristic = heuristic;
     }
 
@@ -596,10 +596,15 @@ public class stateNode implements Comparable<stateNode> {
      *         this < other -> -1
      */
     @Override
-    public int compareTo(@NotNull stateNode other) {
-        int other_f = other.f();
-        int this_f = f();
-        return Integer.compare(this_f, other_f);
+    public int compareTo(stateNode other) {
+        if(this.f()>other.f()){
+            return 1;
+        }
+        if(this.f() < other.f()){
+            return -1;
+        }
+
+        return this.getId() > other.getId()? 1: - 1;
     }
 
     /**
@@ -629,7 +634,7 @@ public class stateNode implements Comparable<stateNode> {
     }
 
     public static int stateNodeNumber(){
-        return nodeCounter;
+        return ID_Generator;
     }
 
     public void checkEmpties(){

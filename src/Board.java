@@ -1,5 +1,3 @@
-package model;
-
 import java.awt.*;
 import java.util.HashMap;
 
@@ -7,7 +5,7 @@ public class Board {
 
     stateNode goal;
     stateNode curr;
-    boolean time, open;
+    boolean time, open, reverse;
     int rowLen, colLen;
     HashMap<Integer, Point> goalMap = new HashMap<>();
 
@@ -29,14 +27,16 @@ public class Board {
                 5  6  7  8
                 9  10 11 _
      */
-    public Board(boolean time, boolean open, int rowLen, int colLen, stateNode start, stateNode goal) {
-        this.goal= start;
-        updateGoalMap(start);
-        this.curr = goal;
-
-//        this.goal= goal;
-//        updateGoalMap(goal);
-//        this.curr = start;
+    public Board(boolean time, boolean open, int rowLen, int colLen, stateNode start, stateNode goal, boolean reverse) {
+        this.reverse = reverse;
+        if(reverse) {
+            this.goal = start;
+            this.curr = goal;
+        }else {
+            this.goal = goal;
+            this.curr = start;
+        }
+        updateGoalMap(this.goal);
 
         this.time = time;
         this.open = open;
@@ -53,20 +53,9 @@ public class Board {
             }
         }
     }
-    public void setOpen(boolean open) {
-        this.open = open;
-    }
 
-    public void setTime(boolean time) {
-        this.time = time;
-    }
-
-    public void setCurr(stateNode curr) {
-        this.curr = curr;
-    }
-
-    public void setGoal(stateNode goal) {
-        this.goal = goal;
+    public boolean isReverse() {
+        return reverse;
     }
 
     public Point tileLocation(int tileNum){
