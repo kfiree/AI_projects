@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
 
 stroke_results = {'knn': '', 
                     'decision_trees': '',
@@ -81,9 +82,13 @@ bmi_impute = KNNImputer(n_neighbors=71, weights='uniform') #71 is the sqrt of th
 
 df['bmi'] = bmi_impute.fit_transform(df[['bmi']])
 
+# Create X and y variables for stroke
+# X = df.drop(['stroke'],axis=1)
+# y = df['stroke'].to_frame()
+
 # # Create X and y variables for stroke
-X = df.drop(['stroke'],axis=1)
-y = df['stroke'].to_frame()
+X = df.drop(['avg_glucose_level'],axis=1)
+y = df['avg_glucose_level'].to_frame()
 
 scaler = StandardScaler()
 df = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
@@ -110,16 +115,18 @@ X_train_scaled = mm_scalar.fit_transform(X_train)
 X_test_scaled = mm_scalar.fit_transform(X_test)
 
 # Function to fit classifier and print accuracy score
-def modelAll(classifier, classifier_name, X_train = X_train_scaled, y_train = y_train,
-                             X_test = X_test_scaled, y_test = y_test):
+def modelAll(classifier, classifier_name, X_train = X_train, y_train = y_train,
+                             X_test = X_test, y_test = y_test):
     # Fit classifier
     classifier.fit(X_train, np.ravel(y_train))
     
     # Predict testing set using the trained model
-    y_pred = classifier.predict(X)
+    y_pred = classifier.predict(X_test)
+    y_pred = np.round(y_pred, 2)
+
     # df.assign(heart_disease=y_pred)
     print("Model: ",type(classifier).__name__)
-    print("Test Data Accuracy: %0.2f" % accuracy_score(y,y_pred))
+    print("Test Data Accuracy: %0.2f" % accuracy_score(y_test,y_pred))
     # print(classification_report(y_test, y_pred))
     # stroke_results.update({classifier_name: accuracy_score(y_test,y_pred)*100})
     return y_pred
@@ -136,16 +143,20 @@ knn_classifier = KNeighborsClassifier(n_neighbors = round(math.sqrt(X_train.size
 #Initialize Logistic regression classifier
 logistic_regression_classifier = LogisticRegression(solver='lbfgs', max_iter=100)
 
-# # Fit Adaboost Classifier
-modelAll(adaboost_classifier, 'adaboost')
+linear_regression_classifier = LinearRegression()
 
-# # # Fit Decision trees Classifier
-modelAll(decision_trees_classifier, 'decision_trees')
+# # Fit Adaboost Classifier
+# modelAll(adaboost_classifier, 'adaboost')
+
+# # # # Fit Decision trees Classifier
+# modelAll(decision_trees_classifier, 'decision_trees')
+
+modelAll(linear_regression_classifier, 'linear_regression')
 
 # # Fit KNN Classifier
-heart_disease_new =  modelAll(knn_classifier, 'knn')
+# heart_disease_new =  modelAll(knn_classifier, 'knn')
 
-# # Fir Logistic Regression Classifier
-heart_disease_new =  modelAll(logistic_regression_classifier, 'logistic_regression')
+# # # Fir Logistic Regression Classifier
+# heart_disease_new =  modelAll(logistic_regression_classifier, 'logistic_regression')
 
 print('\n\n\n')
