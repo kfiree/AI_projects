@@ -12,7 +12,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
-from imblearn.under_sampling import NearMiss
 
 stroke_results = {'knn': '', 
                     'decision_trees': '',
@@ -28,7 +27,8 @@ df = pd.read_csv('healthcare-dataset-stroke-data.csv')
 df.drop('id', axis=1, inplace = True)
 
 df2 = df[df.stroke != 0]
-df = pd.concat([df, df2, df2, df2], axis=0)
+for i in range(19):
+    df = pd.concat([df, df2], axis=0)
 
 # Reset index of dataframe
 df = df.reset_index(drop = True)
@@ -36,7 +36,7 @@ df = df.reset_index(drop = True)
 # drop row with gender is 'Other'. There is only 1, so not removing is not significant.
 df.drop(df.index[df['gender'] == "Other"], inplace = True)
 
-# df.drop(['heart_disease'],axis = 1, inplace=True)
+df.drop(['heart_disease'],axis = 1, inplace=True)
 
 # Reset index of dataframe
 df = df.reset_index(drop = True)
